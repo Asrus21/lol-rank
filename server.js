@@ -428,6 +428,45 @@ app.get('/api/command/:customUuid/:commandName', async (req, res) => {
 });
 
 // ============================================
+// ROTA: Executar comando em TEXTO PURO
+// (para StreamElements / Nightbot / Streamlabs)
+// ============================================
+app.get('/cmd/:customUuid/:commandName', async (req, res) => {
+  const { customUuid, commandName } = req.params;
+
+  // Sempre responde texto puro
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+
+  try {
+    const cmdResult = await pool.query(
+      'SELECT template, game_mode FROM custom_commands WHERE custom_uuid = $1 AND command_name = $2',
+      [customUuid, commandName]
+    );
+
+    if (cmdResult.rows.length === 0) {
+      return res.send('Comando não encontrado');
+    }
+
+    const playerResult = await pool.query('SELECT * FROM players WHERE custom_uuid = $1', [customUuid]);
+    if (playerResult.rows.length === 0) {
+      return res.send('Jogador não encontrado');
+    }
+
+    const player = playerResult.rows[0];
+    const { template, game_mode } = cmdResult.rows[0];
+
+    const ranked = await fetchRankedData(player, game_mode);
+    const result = applyTemplate(template, player, ranked, game_mode);
+
+    // Devolve SÓ a frase, sem JSON, sem aspas
+    res.send(result);
+  } catch (err) {
+    console.error('Erro na rota /cmd:', err.message);
+    res.send('Erro ao processar o comando');
+  }
+});
+
+// ============================================
 // ROTA: Listar comandos
 // ============================================
 app.get('/api/commands/:customUuid', async (req, res) => {
