@@ -732,22 +732,18 @@
 // Detectar URL da API automaticamente
 const API_URL = (() => {
   const hostname = window.location.hostname;
-  
-  // Desenvolvimento
+
+  // Desenvolvimento local
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3000';
   }
-  
-  // Produção - Railway com subdomínio api
-  if (hostname === 'asrus.app' || hostname === 'www.asrus.app') {
-    return 'https://api.asrus.app';
-  }
-  
-  // Fallback - mesmo domínio
-  return `${window.location.protocol}//${window.location.host}`;
+
+  // Produção: string vazia = mesma origem.
+  // O Vercel (vercel.json rewrites) redireciona /api/* e /cmd/* para o Railway.
+  return '';
 })();
 
-console.log(`🔗 API URL detectada: ${API_URL}`);
+console.log(`🔗 API URL detectada: ${API_URL || '(mesma origem - Vercel proxy)'}`);
 
 let currentUuid = null;
 let currentMode = 'lol'; // 'lol' ou 'tft'
