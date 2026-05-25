@@ -459,6 +459,10 @@ function setLang(lang) {
     const key = el.getAttribute('data-i18n');
     if (I18N[lang][key]) el.innerHTML = I18N[lang][key];
   });
+
+  // Atualiza o placeholder do template com o exemplo no idioma atual
+  const ta = document.getElementById('commandTemplate');
+  if (ta) ta.placeholder = DEFAULT_TEMPLATE[lang] || DEFAULT_TEMPLATE.pt;
 }
 
 // ============================================
@@ -602,8 +606,11 @@ function insertVar(variable) {
 // ============================================
 // TESTAR
 // ============================================
-// Template padrão usado quando o usuário não preenche nada
-const DEFAULT_TEMPLATE = '(player) está (rank) com (pontos) pontos';
+// Template padrão por idioma — usado quando o usuário não preenche nada
+const DEFAULT_TEMPLATE = {
+  pt: '(player) está (rank) com (pontos) pontos',
+  en: '(player) is (rank) with (lp) LP'
+};
 
 // Monta a URL de forma "clean" — sem codificar parênteses e espaços, e com aspas no msg
 // Caracteres que de fato quebram a URL ainda são codificados (& # ? % e os ASCII de controle)
@@ -624,10 +631,10 @@ async function testCommand() {
     return;
   }
 
-  // Template padrão quando o campo está vazio
+  // Template padrão quando o campo está vazio (varia por idioma)
   let template = document.getElementById('commandTemplate').value.trim();
   if (!template) {
-    template = DEFAULT_TEMPLATE;
+    template = DEFAULT_TEMPLATE[currentLang] || DEFAULT_TEMPLATE.pt;
   }
   const queue = document.getElementById('queueSelect').value;
 
