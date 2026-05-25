@@ -361,6 +361,133 @@ app.get('/api/player/:customUuid', async (req, res) => {
 // ROTA NOVA: /cmd/lol/:puuid?msg=...&queue=lol_solo&lang=pt
 // Formato preferencial (igual ao rank-tft)
 // ============================================
+// ============================================
+// ROTA NOVA: /cmd/lol?nick=X&tag=Y&region=Z OU ?puuid=...
+// Aceita identificação por nick+tag ou por puuid via query string
+// ============================================
+app.get('/cmd/lol', async (req, res) => {
+  const template = cleanMsg(req.query.msg) || '(player) está (rank) com (pontos) pontos';
+  const gameMode = (req.query.queue || req.query.mode || 'lol_solo').toLowerCase();
+  const lang = (req.query.lang || 'pt').toLowerCase();
+
+  // Aceita ?puuid=... OU ?nick=...&tag=...&region=...
+  const queryPuuid = cleanMsg(req.query.puuid);
+  const queryNick = cleanMsg(req.query.nick) || cleanMsg(req.query.player) || cleanMsg(req.query.gameName);
+  const queryTag = cleanMsg(req.query.tag) || cleanMsg(req.query.tagLine);
+  const queryRegion = (cleanMsg(req.query.region) || '').toLowerCase();
+
+  try {
+    let player = { puuid: null, gameName: null, tagLine: null, region: null };
+
+    if (queryPuuid) {
+      // Caminho A: PUUID direto
+      const dbRes = await pool.query('SELECT * FROM players WHERE riot_puuid = $1 LIMIT 1', [queryPuuid]);
+      if (dbRes.rows.length === 0) {
+        const errMsg = lang === 'en'
+          ? 'PUUID not registered. Search the player first at asrus.app/rank-lol'
+          : 'PUUID não registrado. Busque o jogador primeiro em asrus.app/rank-lol';
+        if (wantsHtml(req)) {
+          res.set('Content-Type', 'text/html; charset=utf-8');
+          return res.send(renderHtmlResult(errMsg, { player: '—', tag: '—', region: '—', gameMode }));
+        }
+        res.set('Content-Type', 'text/plain; charset=utf-8');
+        return res.send(errMsg);
+      }
+      player = {
+        puuid: queryPuuid,
+        gameName: dbRes.rows[0].current_game_name,
+        tagLine: dbRes.rows[0].current_tag_line,
+        region: dbRes.rows[0].region
+      };
+    } else if (queryNick && queryTag && queryRegion) {
+      // Caminho B: nick + tag + região
+      if (!REGION_ROUTING[queryRegion]) {
+        const errMsg = lang === 'en' ? 'Invalid region' : 'Região inválida';
+        res.set('Content-Type', 'text/plain; charset=utf-8');
+        return res.send(errMsg);
+      }
+
+      // Primeiro tenta achar no banco (evita chamada à Riot)
+      const dbRes = await pool.query(`
+        SELECT * FROM players
+        WHERE LOWER(current_game_name) = LOWER($1)
+          AND LOWER(current_tag_line) = LOWER($2)
+          AND region = $3
+        LIMIT 1
+      `, [queryNick, queryTag, queryRegion]);
+
+      if (dbRes.rows.length > 0) {
+        player = {
+          puuid: dbRes.rows[0].riot_puuid,
+          gameName: dbRes.rows[0].current_game_name,
+          tagLine: dbRes.rows[0].current_tag_line,
+          region: dbRes.rows[0].region
+        };
+      } else {
+        // Não está em cache — pede pra Riot e salva
+        try {
+          const riotData = await fetchRiotAccount(queryNick, queryTag, queryRegion);
+          // Salva/atualiza no banco pra próximas chamadas serem instantâneas
+          const existing = await pool.query('SELECT * FROM players WHERE riot_puuid = $1', [riotData.puuid]);
+          if (existing.rows.length > 0) {
+            await pool.query(`
+              UPDATE players SET current_game_name = $1, current_tag_line = $2, summoner_id = $3, updated_at = CURRENT_TIMESTAMP
+              WHERE riot_puuid = $4
+            `, [riotData.gameName, riotData.tagLine, riotData.summonerId, riotData.puuid]);
+          } else {
+            const newUuid = uuidv4();
+            await pool.query(`
+              INSERT INTO players (custom_uuid, riot_puuid, current_game_name, current_tag_line, region, summoner_id)
+              VALUES ($1, $2, $3, $4, $5, $6)
+            `, [newUuid, riotData.puuid, riotData.gameName, riotData.tagLine, queryRegion, riotData.summonerId]);
+          }
+          player = {
+            puuid: riotData.puuid,
+            gameName: riotData.gameName,
+            tagLine: riotData.tagLine,
+            region: queryRegion
+          };
+        } catch (riotErr) {
+          const status = riotErr.response?.status;
+          let errMsg;
+          if (status === 404) errMsg = lang === 'en' ? 'Player not found' : 'Jogador não encontrado';
+          else if (status === 429) errMsg = lang === 'en' ? 'Rate limit exceeded' : 'Rate limit excedido';
+          else errMsg = lang === 'en' ? 'Error contacting Riot API' : 'Erro ao consultar a Riot';
+          res.set('Content-Type', 'text/plain; charset=utf-8');
+          return res.send(errMsg);
+        }
+      }
+    } else {
+      // Faltam parâmetros
+      const errMsg = lang === 'en'
+        ? 'Missing parameters. Use ?puuid=... or ?nick=...&tag=...&region=...'
+        : 'Parâmetros faltando. Use ?puuid=... ou ?nick=...&tag=...&region=...';
+      res.set('Content-Type', 'text/plain; charset=utf-8');
+      return res.send(errMsg);
+    }
+
+    // A partir daqui, `player` está resolvido
+    const ranked = await fetchRankedByPuuid(player.puuid, player.region, gameMode);
+    const result = applyTemplate(template, player, ranked, gameMode, lang);
+
+    if (wantsHtml(req)) {
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      return res.send(renderHtmlResult(result, {
+        player: player.gameName,
+        tag: player.tagLine,
+        region: player.region,
+        gameMode
+      }));
+    }
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    res.send(result);
+  } catch (err) {
+    console.error('Erro em /cmd/lol (query):', err.message);
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    res.send('Erro ao processar o comando');
+  }
+});
+
 app.get('/cmd/lol/:puuid', async (req, res) => {
   const { puuid } = req.params;
   const template = cleanMsg(req.query.msg) || '(player) está (rank) com (pontos) pontos';
