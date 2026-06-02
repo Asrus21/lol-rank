@@ -613,23 +613,25 @@ function safeEncode(s) {
   return String(s).replace(/[&#?%]/g, encodeURIComponent);
 }
 
-// Monta URL "clean" no formato apropriado:
-// - PUUID: /cmd/lol?puuid=...&msg=...
-// - Nick + tag: /cmd/lol?nick=...&tag=...&region=...&msg=...
+// Monta URL "clean" no padrão unificado /api/{jogo}/...:
+// - PUUID: /api/lol/cmd/{puuid}?msg=...
+// - Nick + tag: /api/lol/cmd?nick=...&tag=...&region=...&msg=...
 function buildCleanUrl(identity, msg, queue, lang) {
   const safeMsg = safeEncode(msg);
   const safeQueue = safeEncode(queue);
   const safeLang = safeEncode(lang);
-  const base = `${window.location.origin}/cmd/lol`;
+  const base = `${window.location.origin}/api/lol/cmd`;
 
-  let idPart;
+  let path = base;
+  let idPart = '';
   if (identity.puuid) {
-    idPart = `puuid=${safeEncode(identity.puuid)}`;
+    // PUUID no path (mesmo formato de TFT e Valorant).
+    path = `${base}/${safeEncode(identity.puuid)}`;
   } else {
-    idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}`;
+    idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
   }
 
-  return `${base}?${idPart}&msg="${safeMsg}"&queue=${safeQueue}&lang=${safeLang}`;
+  return `${path}?${idPart}msg="${safeMsg}"&queue=${safeQueue}&lang=${safeLang}`;
 }
 
 async function generateCommand() {
