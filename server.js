@@ -25,6 +25,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Garante que o schema exista antes de atender requests (essencial na Vercel,
+// onde não há app.listen para rodar a init no boot). Idempotente e cacheado.
+app.use(async (req, res, next) => {
+  try { await ensureInit(); next(); } catch (e) { next(e); }
+});
+
 // ============================================
 // REGIÕES
 // ============================================
@@ -67,7 +73,7 @@ function traduzirDivisao(div) {
 async function initDatabase() {
   try {
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS players (
+      CREATE TABLE IF NOT EXISTS lol_players (
         id SERIAL PRIMARY KEY,
         custom_uuid VARCHAR(36) UNIQUE NOT NULL,
         riot_puuid VARCHAR(78) UNIQUE NOT NULL,
@@ -80,13 +86,13 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    await pool.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS tft_summoner_id VARCHAR(100);`);
+    await pool.query(`ALTER TABLE lol_players ADD COLUMN IF NOT EXISTS tft_summoner_id VARCHAR(100);`);
 
     // Tabela de comandos salvos — mantida para compatibilidade com o formato antigo /cmd/UUID/NOME
     await pool.query(`
       CREATE TABLE IF NOT EXISTS custom_commands (
         id SERIAL PRIMARY KEY,
-        custom_uuid VARCHAR(36) NOT NULL REFERENCES players(custom_uuid) ON DELETE CASCADE,
+        custom_uuid VARCHAR(36) NOT NULL REFERENCES lol_players(custom_uuid) ON DELETE CASCADE,
         command_name VARCHAR(50) NOT NULL,
         template TEXT NOT NULL,
         game_mode VARCHAR(20) DEFAULT 'lol_solo',
@@ -402,12 +408,12 @@ app.post('/api/register', async (req, res) => {
       tagLine: riotData.tagLine,
       riotRegion: region.toLowerCase()
     });
-    const existing = await pool.query('SELECT * FROM players WHERE riot_puuid = $1', [riotData.puuid]);
+    const existing = await pool.query('SELECT * FROM lol_players WHERE riot_puuid = $1', [riotData.puuid]);
 
     if (existing.rows.length > 0) {
       const player = existing.rows[0];
       await pool.query(`
-        UPDATE players SET current_game_name = $1, current_tag_line = $2, summoner_id = $3, updated_at = CURRENT_TIMESTAMP
+        UPDATE lol_players SET current_game_name = $1, current_tag_line = $2, summoner_id = $3, updated_at = CURRENT_TIMESTAMP
         WHERE riot_puuid = $4
       `, [riotData.gameName, riotData.tagLine, riotData.summonerId, riotData.puuid]);
 
@@ -425,7 +431,7 @@ app.post('/api/register', async (req, res) => {
 
     const customUuid = uuidv4();
     await pool.query(`
-      INSERT INTO players (custom_uuid, riot_puuid, current_game_name, current_tag_line, region, summoner_id)
+      INSERT INTO lol_players (custom_uuid, riot_puuid, current_game_name, current_tag_line, region, summoner_id)
       VALUES ($1, $2, $3, $4, $5, $6)
     `, [customUuid, riotData.puuid, riotData.gameName, riotData.tagLine, region.toLowerCase(), riotData.summonerId]);
 
@@ -454,7 +460,7 @@ app.post('/api/register', async (req, res) => {
 // ============================================
 app.get('/api/player/:customUuid', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM players WHERE custom_uuid = $1', [req.params.customUuid]);
+    const result = await pool.query('SELECT * FROM lol_players WHERE custom_uuid = $1', [req.params.customUuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'UUID não encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -515,8 +521,8 @@ async function handleLolCmd(req, res) {
             : 'Conta conhecida em outro jogo. Informe a região do LoL, ex: ?region=br1');
         }
       } else {
-        // Compat. legada: puuid real ainda no banco local de players.
-        const dbRes = await pool.query('SELECT * FROM players WHERE riot_puuid = $1 LIMIT 1', [queryId]);
+        // Compat. legada: puuid real ainda no banco local de lol_players.
+        const dbRes = await pool.query('SELECT * FROM lol_players WHERE riot_puuid = $1 LIMIT 1', [queryId]);
         if (dbRes.rows.length > 0) {
           player = {
             puuid: queryId,
@@ -543,7 +549,7 @@ async function handleLolCmd(req, res) {
 
       // Primeiro tenta achar no banco (evita chamada à Riot)
       const dbRes = await pool.query(`
-        SELECT * FROM players
+        SELECT * FROM lol_players
         WHERE LOWER(current_game_name) = LOWER($1)
           AND LOWER(current_tag_line) = LOWER($2)
           AND region = $3
@@ -562,16 +568,16 @@ async function handleLolCmd(req, res) {
         try {
           const riotData = await fetchRiotAccount(queryNick, queryTag, queryRegion);
           // Salva/atualiza no banco pra próximas chamadas serem instantâneas
-          const existing = await pool.query('SELECT * FROM players WHERE riot_puuid = $1', [riotData.puuid]);
+          const existing = await pool.query('SELECT * FROM lol_players WHERE riot_puuid = $1', [riotData.puuid]);
           if (existing.rows.length > 0) {
             await pool.query(`
-              UPDATE players SET current_game_name = $1, current_tag_line = $2, summoner_id = $3, updated_at = CURRENT_TIMESTAMP
+              UPDATE lol_players SET current_game_name = $1, current_tag_line = $2, summoner_id = $3, updated_at = CURRENT_TIMESTAMP
               WHERE riot_puuid = $4
             `, [riotData.gameName, riotData.tagLine, riotData.summonerId, riotData.puuid]);
           } else {
             const newUuid = uuidv4();
             await pool.query(`
-              INSERT INTO players (custom_uuid, riot_puuid, current_game_name, current_tag_line, region, summoner_id)
+              INSERT INTO lol_players (custom_uuid, riot_puuid, current_game_name, current_tag_line, region, summoner_id)
               VALUES ($1, $2, $3, $4, $5, $6)
             `, [newUuid, riotData.puuid, riotData.gameName, riotData.tagLine, queryRegion, riotData.summonerId]);
           }
@@ -648,7 +654,7 @@ app.post('/api/command', async (req, res) => {
     return res.status(400).json({ error: 'game_mode inválido' });
   }
   try {
-    const player = await pool.query('SELECT * FROM players WHERE custom_uuid = $1', [custom_uuid]);
+    const player = await pool.query('SELECT * FROM lol_players WHERE custom_uuid = $1', [custom_uuid]);
     if (player.rows.length === 0) return res.status(404).json({ error: 'UUID não encontrado' });
     await pool.query(`
       INSERT INTO custom_commands (custom_uuid, command_name, template, game_mode)
@@ -671,7 +677,7 @@ app.get('/api/command/:customUuid/:commandName', async (req, res) => {
     );
     if (cmdResult.rows.length === 0) return res.status(404).json({ error: 'Comando não encontrado' });
 
-    const playerResult = await pool.query('SELECT * FROM players WHERE custom_uuid = $1', [customUuid]);
+    const playerResult = await pool.query('SELECT * FROM lol_players WHERE custom_uuid = $1', [customUuid]);
     const player = playerResult.rows[0];
     const { template, game_mode } = cmdResult.rows[0];
 
@@ -702,7 +708,7 @@ app.get('/cmd/:customUuid/:commandName', async (req, res) => {
     );
     if (cmdResult.rows.length === 0) return res.send('Comando não encontrado');
 
-    const playerResult = await pool.query('SELECT * FROM players WHERE custom_uuid = $1', [customUuid]);
+    const playerResult = await pool.query('SELECT * FROM lol_players WHERE custom_uuid = $1', [customUuid]);
     if (playerResult.rows.length === 0) return res.send('Jogador não encontrado');
 
     const player = playerResult.rows[0];
@@ -745,10 +751,25 @@ app.delete('/api/command/:customUuid/:commandName', async (req, res) => {
 // ============================================
 // START
 // ============================================
-app.listen(PORT, async () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`🔑 RIOT_API_KEY: ${RIOT_API_KEY ? 'definida' : '❌ AUSENTE'}`);
-  console.log(`🎮 Modo: somente LoL`);
-  console.log(`📍 Rota nova: /api/lol/cmd/:puuid?msg=...&queue=lol_solo&lang=pt (legado: /cmd/lol/:puuid)`);
-  await initDatabase();
-});
+// Inicialização do banco idempotente, rodada uma vez por processo. Em ambiente
+// serverless (Vercel) não há app.listen — então garantimos o schema na 1ª request.
+let _initPromise = null;
+function ensureInit() {
+  if (!_initPromise) _initPromise = initDatabase().catch((e) => { _initPromise = null; throw e; });
+  return _initPromise;
+}
+
+// Local / servidor persistente: escuta uma porta. Na Vercel isso é pulado e o
+// app é exportado como handler serverless (ver vercel.json + api/index.js).
+if (!process.env.VERCEL) {
+  app.listen(PORT, async () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`🔑 RIOT_API_KEY: ${RIOT_API_KEY ? 'definida' : '❌ AUSENTE'}`);
+    console.log(`🎮 Modo: somente LoL`);
+    console.log(`📍 Rota nova: /api/lol/cmd/:puuid?msg=...&queue=lol_solo&lang=pt (legado: /cmd/lol/:puuid)`);
+    await ensureInit();
+  });
+}
+
+module.exports = app;
+module.exports.ensureInit = ensureInit;
