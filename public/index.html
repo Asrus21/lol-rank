@@ -282,10 +282,27 @@
 
         <!-- método: puuid -->
         <div class="method-panel" id="gen-panel-puuid">
-          <div class="form-group" style="margin-bottom:0">
+          <div class="form-group" style="margin-bottom:12px">
             <label>ID asrus</label>
             <input type="text" id="genPuuid" placeholder="ex: a3f1c9e2-7b4d-4e21-9c8a-..." autocomplete="off">
             <div class="hint" data-i18n="hint_puuid_use">Use o ID asrus obtido no Passo 01 (o mesmo ID vale para LoL, TFT e Valorant).</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="lbl_region">Região (do LoL)</label>
+            <select id="genPuuidRegion">
+              <option value="br1">BR1 — Brasil</option>
+              <option value="na1">NA1 — North America</option>
+              <option value="euw1">EUW1 — Europe West</option>
+              <option value="eun1">EUN1 — Europe Nordic &amp; East</option>
+              <option value="kr">KR — Korea</option>
+              <option value="jp1">JP1 — Japan</option>
+              <option value="la1">LA1 — Latin America North</option>
+              <option value="la2">LA2 — Latin America South</option>
+              <option value="oc1">OC1 — Oceania</option>
+              <option value="tr1">TR1 — Turkey</option>
+              <option value="ru">RU — Russia</option>
+            </select>
+            <div class="hint">A região do LoL pode ser diferente da do Valorant — confirme aqui.</div>
           </div>
         </div>
       </div>
@@ -599,7 +616,8 @@ function resolveGenIdentity() {
   if (currentGenMethod === 'puuid') {
     const puuid = document.getElementById('genPuuid').value.trim();
     if (!puuid) return { error: 'toast_fill_puuid' };
-    return { puuid };
+    const region = document.getElementById('genPuuidRegion').value;
+    return { puuid, region };
   }
 
   const nick = document.getElementById('genGameName').value.trim();
@@ -626,8 +644,10 @@ function buildCleanUrl(identity, msg, queue, lang) {
   let path = base;
   let idPart = '';
   if (identity.puuid) {
-    // PUUID no path (mesmo formato de TFT e Valorant).
+    // ID no path (mesmo formato de TFT e Valorant). A região do LoL vai junto
+    // porque pode diferir da do Valorant (conta cross-region).
     path = `${base}/${safeEncode(identity.puuid)}`;
+    if (identity.region) idPart = `region=${safeEncode(identity.region)}&`;
   } else {
     idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
   }
