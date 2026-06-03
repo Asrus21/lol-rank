@@ -223,7 +223,7 @@
         <div class="player-found-label">✓ <span data-i18n="player_found">Jogador encontrado</span></div>
         <div class="player-found-name" id="pfName"></div>
         <div class="player-found-region" id="pfRegion"></div>
-        <div class="uuid-label">PUUID</div>
+        <div class="uuid-label">ID asrus (vale p/ LoL, TFT e Valorant)</div>
         <div class="uuid-code">
           <span id="pfPuuid"></span>
           <button class="copy-btn" onclick="copyPuuid()">COPY</button>
@@ -247,7 +247,7 @@
 
         <div class="method-tabs">
           <div class="method-tab active" data-method="riotid" onclick="selectGenMethod('riotid')"><span data-i18n="m_nicktag">Nick + Tag</span></div>
-          <div class="method-tab" data-method="puuid" onclick="selectGenMethod('puuid')">PUUID</div>
+          <div class="method-tab" data-method="puuid" onclick="selectGenMethod('puuid')">ID asrus</div>
         </div>
 
         <!-- método: nick + tag + região -->
@@ -283,9 +283,9 @@
         <!-- método: puuid -->
         <div class="method-panel" id="gen-panel-puuid">
           <div class="form-group" style="margin-bottom:0">
-            <label>PUUID</label>
-            <input type="text" id="genPuuid" placeholder="ex: Z9YJFowsnYTMkRbR..." autocomplete="off">
-            <div class="hint" data-i18n="hint_puuid_use">Use o PUUID obtido no Passo 01 ou um que você já tenha.</div>
+            <label>ID asrus</label>
+            <input type="text" id="genPuuid" placeholder="ex: a3f1c9e2-7b4d-4e21-9c8a-..." autocomplete="off">
+            <div class="hint" data-i18n="hint_puuid_use">Use o ID asrus obtido no Passo 01 (o mesmo ID vale para LoL, TFT e Valorant).</div>
           </div>
         </div>
       </div>
@@ -546,8 +546,9 @@ async function searchPlayer() {
       showAlert(data.error || 'Error', 'error');
       return;
     }
-    // salva no banco silenciosamente (data.isNew indica se foi criado agora)
-    onPlayerFound(data.puuid, data.gameName, data.tagLine, data.region);
+    // Usa o account_id (ID gerado do zero) — o MESMO ID vale para LoL, TFT e
+    // Valorant. data.isNew indica se foi criado agora.
+    onPlayerFound(data.account_id || data.puuid, data.gameName, data.tagLine, data.region);
     showAlert(t('toast_found'), 'success');
   } catch (err) {
     showAlert(t('toast_err_conn') + err.message, 'error');
@@ -613,23 +614,25 @@ function safeEncode(s) {
   return String(s).replace(/[&#?%]/g, encodeURIComponent);
 }
 
-// Monta URL "clean" no formato apropriado:
-// - PUUID: /cmd/lol?puuid=...&msg=...
-// - Nick + tag: /cmd/lol?nick=...&tag=...&region=...&msg=...
+// Monta URL "clean" no padrão unificado /api/{jogo}/...:
+// - PUUID: /api/lol/cmd/{puuid}?msg=...
+// - Nick + tag: /api/lol/cmd?nick=...&tag=...&region=...&msg=...
 function buildCleanUrl(identity, msg, queue, lang) {
   const safeMsg = safeEncode(msg);
   const safeQueue = safeEncode(queue);
   const safeLang = safeEncode(lang);
-  const base = `${window.location.origin}/cmd/lol`;
+  const base = `${window.location.origin}/api/lol/cmd`;
 
-  let idPart;
+  let path = base;
+  let idPart = '';
   if (identity.puuid) {
-    idPart = `puuid=${safeEncode(identity.puuid)}`;
+    // PUUID no path (mesmo formato de TFT e Valorant).
+    path = `${base}/${safeEncode(identity.puuid)}`;
   } else {
-    idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}`;
+    idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
   }
 
-  return `${base}?${idPart}&msg="${safeMsg}"&queue=${safeQueue}&lang=${safeLang}`;
+  return `${path}?${idPart}msg="${safeMsg}"&queue=${safeQueue}&lang=${safeLang}`;
 }
 
 async function generateCommand() {
