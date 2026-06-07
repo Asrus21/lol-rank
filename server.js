@@ -483,8 +483,19 @@ async function handleLolCmd(req, res) {
 
   // O ID pode vir no path (/api/lol/cmd/:id) ou na query (?id= / ?puuid=)
   const queryId = cleanMsg(req.params.puuid) || cleanMsg(req.query.id) || cleanMsg(req.query.puuid);
-  const queryNick = cleanMsg(req.query.nick) || cleanMsg(req.query.player) || cleanMsg(req.query.gameName);
-  const queryTag = cleanMsg(req.query.tag) || cleanMsg(req.query.tagLine);
+  let queryNick = cleanMsg(req.query.nick) || cleanMsg(req.query.gameName);
+  let queryTag = cleanMsg(req.query.tag) || cleanMsg(req.query.tagLine);
+  // Suporta ?player=Nome#Tag (ex.: comando de chat "!rank Nome#Tag").
+  const combined = cleanMsg(req.query.player) || cleanMsg(req.query.riot);
+  if ((!queryNick || !queryTag) && combined) {
+    const h = combined.lastIndexOf('#');
+    if (h > 0 && h < combined.length - 1) {
+      queryNick = combined.slice(0, h).trim();
+      queryTag = combined.slice(h + 1).trim();
+    } else if (!queryNick) {
+      queryNick = combined;
+    }
+  }
   const queryRegion = (cleanMsg(req.query.region) || '').toLowerCase();
 
   const sendErr = (msg, meta) => {
