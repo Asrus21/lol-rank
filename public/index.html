@@ -632,14 +632,21 @@ function safeEncode(s) {
   return String(s).replace(/[&#?%]/g, encodeURIComponent);
 }
 
-// Monta URL "clean" no padrão unificado /api/{jogo}/...:
-// - PUUID: /api/lol/cmd/{puuid}?msg=...
-// - Nick + tag: /api/lol/cmd?nick=...&tag=...&region=...&msg=...
-function buildCleanUrl(identity, msg, queue, lang) {
+// Endereço do comando que vai para o bot: o subdomínio das APIs de jogos
+// (api.asrus.app/lol/... = www.asrus.app/api/lol/...). URL curta e fixa — não
+// depende de onde a página foi aberta.
+const CMD_BASE = 'https://api.asrus.app/lol/cmd';
+// O preview roda pela origem da própria página: o mesmo backend, sem depender
+// de CORS entre www e api.
+const PREVIEW_BASE = `${window.location.origin}/api/lol/cmd`;
+
+// Monta URL "clean" no padrão unificado /{jogo}/cmd...:
+// - PUUID: {base}/{puuid}?msg=...
+// - Nick + tag: {base}?nick=...&tag=...&region=...&msg=...
+function buildCleanUrl(identity, msg, queue, lang, base = CMD_BASE) {
   const safeMsg = safeEncode(msg);
   const safeQueue = safeEncode(queue);
   const safeLang = safeEncode(lang);
-  const base = `${window.location.origin}/api/lol/cmd`;
 
   let path = base;
   let idPart = '';
@@ -676,8 +683,8 @@ async function generateCommand() {
     // Monta a URL no formato que o usuário escolheu (puuid OU nick+tag)
     const apiLink = buildCleanUrl(identity, template, queue, currentLang);
 
-    // Chama o backend usando essa mesma URL para o preview ficar consistente
-    const previewUrl = apiLink + '&format=text';
+    // Preview com os mesmos parâmetros, pela origem da página
+    const previewUrl = buildCleanUrl(identity, template, queue, currentLang, PREVIEW_BASE) + '&format=text';
     const res = await fetch(previewUrl);
     const text = await res.text();
 
