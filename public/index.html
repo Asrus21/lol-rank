@@ -6,148 +6,160 @@
 <title>Rank LoL — asrus.app</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ==========================================================================
+     Referência: Galileo-ft, no Refero Styles ("deep-space command deck").
+     Marinho do espaço profundo, títulos em Inter 100 que quase viram fio,
+     cartões de 35px em índigo, fios de 1px em violeta-tinta e botões-pílula.
+     O acento único do modelo (o cobalto) vira o DOURADO do LoL, e o "Signal
+     Teal" do modelo faz o papel do azul hextech — o par ouro + teal do jogo.
+     ========================================================================== */
   *{margin:0;padding:0;box-sizing:border-box}
 
   :root{
-    --bg-primary:#0a0a0f;
-    --bg-secondary:#12121a;
-    --bg-card:#1a1a26;
-    --bg-elevated:#232333;
-    --accent:#a78bfa;
-    --accent-hot:#f472b6;
-    --accent-cool:#60a5fa;
-    --success:#34d399;
-    --warning:#fbbf24;
-    --danger:#f87171;
-    --text-primary:#f5f5fa;
-    --text-secondary:#9999b3;
-    --text-muted:#5c5c75;
-    --border:#2a2a3a;
-    --border-light:#3a3a4f;
+    --bg-primary:#03081a;      /* Void Navy */
+    --bg-secondary:#020626;    /* Deep Indigo */
+    --bg-card:#020626;
+    --bg-elevated:#0a1035;
+    --border:#292f66;          /* Inkline Violet */
+    --border-light:#4d5499;    /* Dusk Iris */
+    --text-primary:#ffffff;
+    --text-secondary:#aab1f2;  /* Quartz Lavender */
+    --text-muted:#7a83cc;      /* Mist Lilac */
+    --accent:#c8aa6e;          /* ouro do LoL no papel do Pulse Cobalt */
+    --accent-hot:#f0e6d2;
+    --accent-cool:#05e0e0;     /* Signal Teal = hextech */
+    --success:#05e0e0;
+    --warning:#f0c86e;
+    --danger:#ff8a9a;
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
   }
 
-  html,body{font-family:'Outfit',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+  html,body{font-family:var(--sans);font-weight:300;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  /* Atmosfera: um brilho teal → índigo bem ao fundo, como o banner do modelo. */
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(900px 520px at 85% -10%,rgba(5,161,201,.16),transparent 60%),radial-gradient(700px 500px at 0% 100%,rgba(61,80,252,.10),transparent 60%);pointer-events:none;z-index:0}
+  :focus-visible{outline:1px solid var(--accent-cool);outline-offset:3px}
 
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 20%,rgba(167,139,250,.12),transparent 40%),radial-gradient(circle at 85% 80%,rgba(244,114,182,.08),transparent 40%);pointer-events:none;z-index:0}
+  .container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 24px 64px}
 
-  .container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:24px}
+  /* HEADER — marca à esquerda, pílulas de navegação à direita */
+  .header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 0 20px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  .logo{display:flex;align-items:center;gap:12px;font-weight:400;font-size:17px;letter-spacing:-.01em}
+  .logo-icon{width:34px;height:34px;border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .logo-sub{font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin-top:2px}
+  .header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .home-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--text-secondary);border-radius:48px;color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:400;transition:border-color .2s,color .2s}
+  .home-btn:hover{border-color:#fff;color:#fff}
+  .lang-switch{display:inline-flex;border:1px solid var(--text-secondary);border-radius:48px;padding:2px}
+  .lang-btn{border:none;background:transparent;color:var(--text-secondary);font:inherit;font-size:12px;font-weight:400;padding:6px 12px;border-radius:48px;cursor:pointer;transition:background .2s,color .2s}
+  .lang-btn.active{background:#fff;color:var(--bg-primary)}
+  .status-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border);border-radius:48px;font-size:10px;letter-spacing:.25em;color:var(--text-secondary)}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-cool);box-shadow:0 0 10px var(--accent-cool);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
 
-  /* HEADER */
-  .header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;margin-bottom:20px;gap:14px;flex-wrap:wrap}
-  .logo{display:flex;align-items:center;gap:12px;font-weight:900;font-size:18px;letter-spacing:-.5px}
-  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent-hot));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(167,139,250,.35)}
-  .logo-sub{font-size:11px;color:var(--text-muted);font-weight:400;letter-spacing:1px;text-transform:uppercase}
+  /* HERO — o título ultrafino (peso 100) é a assinatura do modelo */
+  .hero{padding:72px 0 48px}
+  .hero-eyebrow{display:block;font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:22px}
+  .hero-title{font-weight:100;font-size:clamp(64px,13vw,140px);line-height:.85;letter-spacing:-.02em;color:#fff}
+  .hero-desc{max-width:46ch;margin-top:28px;font-size:16px;line-height:1.6;color:var(--text-secondary)}
+  /* Fio teal → ouro sob o hero: a "faixa de energia" do banner do Galileo. */
+  .hero::after{content:'';display:block;height:1px;margin-top:48px;background:linear-gradient(90deg,var(--accent-cool),var(--accent) 60%,transparent)}
 
-  .header-right{display:flex;align-items:center;gap:10px}
+  /* PAINÉIS — cartões de 35px em índigo profundo, fio violeta-tinta */
+  .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:35px;margin-bottom:20px;overflow:hidden}
+  .panel-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:28px 32px 0}
+  .panel-title{font-size:28px;font-weight:100;letter-spacing:-.02em;line-height:1.3}
+  .panel-title::before{content:none}
+  .panel-badge{font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+  .panel-body{padding:24px 32px 32px}
 
-  .home-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg-elevated);border:1px solid var(--border-light);color:var(--text-secondary);border-radius:20px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:all .2s}
-  .home-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .form-group{margin-bottom:18px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{display:block;font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin:0 0 8px 18px}
+  input,select,textarea{width:100%;padding:13px 18px;background:var(--bg-primary);color:#fff;border:1px solid var(--border);border-radius:35px;font:inherit;font-size:15px;font-weight:300;transition:border-color .2s}
+  input::placeholder,textarea::placeholder{color:var(--border-light)}
+  input:hover,select:hover,textarea:hover{border-color:var(--border-light)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent-cool)}
+  select option{background:var(--bg-secondary)}
+  textarea{min-height:92px;border-radius:24px;resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.6}
 
-  .lang-switch{display:flex;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:20px;padding:3px;gap:2px}
-  .lang-btn{padding:5px 10px;font-size:11px;font-weight:700;background:transparent;border:none;color:var(--text-muted);cursor:pointer;border-radius:14px;letter-spacing:1px;font-family:'JetBrains Mono',monospace;transition:all .2s}
-  .lang-btn.active{background:var(--accent);color:#fff}
-
-  .status-pill{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:20px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace}
-  .status-dot{width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 8px var(--success);animation:pulse 2s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.5}}
-
-  /* HERO */
-  .hero{text-align:center;padding:24px 16px 8px}
-  .hero-title{font-size:32px;font-weight:900;letter-spacing:-1px;margin:0 0 10px;background:linear-gradient(135deg,var(--accent),var(--accent-hot));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.15}
-  .hero-desc{font-size:15px;color:var(--text-secondary);max-width:640px;margin:0 auto;line-height:1.55}
-
-  /* PANELS */
-  .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px}
-  .panel-header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:var(--bg-secondary);border-bottom:1px solid var(--border)}
-  .panel-title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);display:flex;align-items:center;gap:10px}
-  .panel-title::before{content:'';width:4px;height:16px;background:linear-gradient(180deg,var(--accent),var(--accent-hot));border-radius:2px}
-  .panel-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);padding:4px 8px;background:var(--bg-elevated);border-radius:6px}
-  .panel-body{padding:22px}
-
-  /* FORM */
-  .form-group{margin-bottom:16px}
-  .form-row{display:grid;grid-template-columns:2fr 1fr;gap:12px}
-  label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px}
-  input,select,textarea{width:100%;padding:12px 14px;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:8px;color:var(--text-primary);font-family:'Outfit',sans-serif;font-size:14px;transition:all .2s}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:var(--bg-secondary);box-shadow:0 0 0 3px rgba(167,139,250,.15)}
-  textarea{resize:vertical;min-height:80px;font-family:'JetBrains Mono',monospace;font-size:13px}
-
-  /* TABS de método */
-  .method-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;padding:4px;background:var(--bg-elevated);border-radius:10px;border:1px solid var(--border-light)}
-  .method-tab{padding:10px;text-align:center;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);transition:all .2s}
-  .method-tab:hover{color:var(--text-primary)}
-  .method-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent-hot));color:#fff;box-shadow:0 2px 12px rgba(167,139,250,.3)}
+  .method-tabs{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--border);border-radius:48px;margin-bottom:16px}
+  .method-tab{padding:8px 16px;border-radius:48px;cursor:pointer;font-size:13px;font-weight:400;color:var(--text-secondary);transition:background .2s,color .2s}
+  .method-tab:hover{color:#fff}
+  .method-tab.active{background:#fff;color:var(--bg-primary)}
   .method-panel{display:none}
   .method-panel.active{display:block}
 
-  /* BOTÃO */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;background:linear-gradient(135deg,var(--accent),var(--accent-hot));color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.8px;width:100%}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(167,139,250,.3)}
-  .btn:active{transform:translateY(0)}
-  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  /* Ação principal: pílula cheia no acento (ouro), sem sombra nem borda. */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 22px;background:var(--accent);color:var(--bg-primary);border:none;border-radius:48px;font:inherit;font-size:16px;font-weight:400;cursor:pointer;transition:filter .2s,transform .1s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:scale(.99)}
+  .btn:disabled{opacity:.55;cursor:not-allowed;filter:none}
 
-  /* RESULTADO BUSCA (passo 1) */
-  .player-found{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(244,114,182,.08));border:1px solid var(--accent);border-radius:10px;padding:16px;margin-top:16px;display:none}
-  .player-found.show{display:block;animation:slideIn .3s ease-out}
-  @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-  .player-found-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:10px;font-weight:700}
-  .player-found-name{font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
-  .player-found-region{font-size:12px;color:var(--text-secondary);margin-bottom:14px}
-  .uuid-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:4px;font-weight:700}
-  .uuid-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-primary);word-break:break-all;padding:10px 12px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .player-found{display:none;margin-top:22px;padding:22px 24px;border:1px solid var(--border);border-radius:24px;background:var(--bg-primary);animation:slideIn .3s}
+  .player-found.show{display:block}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .player-found-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:10px}
+  .player-found-name{font-size:28px;font-weight:100;letter-spacing:-.02em}
+  .player-found-region{font-size:13px;color:var(--text-secondary);margin:4px 0 16px}
+  .uuid-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+  .uuid-code{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;border:1px solid var(--border);border-radius:35px;font-family:var(--mono);font-size:12px;color:#fff;word-break:break-all}
+  .uuid-code span{flex:1;min-width:0}
+  .copy-btn{flex:none;padding:7px 16px;background:transparent;color:#fff;border:1px solid #fff;border-radius:48px;font:inherit;font-size:12px;font-weight:400;letter-spacing:.08em;cursor:pointer;transition:background .2s,color .2s}
+  .copy-btn:hover{background:#fff;color:var(--bg-primary)}
 
-  .copy-btn{background:transparent;border:1px solid var(--border-light);color:var(--text-secondary);padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'JetBrains Mono',monospace;transition:all .2s;flex-shrink:0}
-  .copy-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .vars-section-title{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin:16px 0 8px 2px}
+  .vars-help{display:flex;flex-wrap:wrap;gap:6px}
+  .var-chip{padding:5px 12px;border:1px solid var(--border-light);border-radius:17px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text-secondary);transition:border-color .2s,color .2s}
+  .var-chip:hover{border-color:var(--accent);color:var(--accent)}
 
-  /* VARIÁVEIS */
-  .vars-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-top:10px;margin-bottom:4px;font-weight:700}
-  .vars-help{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .var-chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:4px;color:var(--accent-cool);cursor:pointer;transition:all .15s}
-  .var-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--bg-primary)}
+  .twitch-preview{margin-top:22px;padding:24px;border:1px solid var(--border);border-radius:24px;background:var(--bg-primary)}
+  .twitch-line{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;flex-wrap:wrap}
+  .twitch-line:last-child{border-bottom:none}
+  .twitch-user{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);min-width:120px}
+  .twitch-arrow{color:var(--border-light)}
+  .twitch-msg{color:#fff;font-weight:300;word-break:break-word}
+  .twitch-msg.bot{color:var(--accent)}
+  .twitch-divider{border:none;height:1px;background:var(--border);margin:16px 0}
+  .preview-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:10px}
+  .copy-field{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 0;border:1px solid var(--border);border-radius:35px}
+  .copy-field input{flex:1;min-width:0;border:none;background:transparent;font-family:var(--mono);font-size:12px;padding:9px 16px}
+  .copy-field input:focus{border:none}
 
-  /* PREVIEW TWITCH */
-  .twitch-preview{background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:14px}
-  .twitch-line{display:flex;gap:8px;align-items:baseline;font-size:14px;margin-bottom:10px;flex-wrap:wrap}
-  .twitch-line:last-child{margin-bottom:0}
-  .twitch-user{font-weight:700;color:var(--accent-cool);font-size:14px}
-  .twitch-arrow{color:var(--text-muted)}
-  .twitch-msg{color:var(--text-primary)}
-  .twitch-msg.bot{color:var(--success);font-family:'JetBrains Mono',monospace;font-size:13px}
-  .twitch-divider{border:none;border-top:1px dashed var(--border-light);margin:12px 0}
+  .hint{font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:8px}
+  .hint code{font-family:var(--mono);font-size:12px;color:var(--text-secondary);background:var(--bg-elevated);padding:1px 6px;border-radius:6px}
 
-  .preview-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;font-weight:700}
+  .subsection{padding:20px 22px;border:1px solid var(--border);border-radius:24px;margin-bottom:20px}
+  .subsection-title{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .subsection-title::before{content:none}
 
-  .copy-field{display:flex;gap:8px;align-items:center;margin-top:6px}
-  .copy-field input{flex:1;font-size:11px;padding:8px 10px;background:var(--bg-secondary);font-family:'JetBrains Mono',monospace}
-
-  .hint{font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.5}
-  .hint code{font-family:'JetBrains Mono',monospace;background:var(--bg-elevated);padding:1px 6px;border-radius:4px;font-size:11px;color:var(--accent-cool)}
-
-  /* Subseção dentro do passo 2 */
-  .subsection{padding:16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;margin-bottom:18px}
-  .subsection-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-  .subsection-title::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px}
-
-  /* SPINNER */
-  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  .spinner{width:14px;height:14px;border:2px solid rgba(3,8,26,.25);border-top-color:var(--bg-primary);border-radius:50%;animation:spin .6s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ALERT toast */
-  .alert{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:opacity .3s;max-width:90%;text-align:center}
-  .alert.info{background:rgba(167,139,250,.15);border:1px solid var(--accent);color:var(--accent)}
-  .alert.success{background:rgba(52,211,153,.15);border:1px solid var(--success);color:var(--success)}
-  .alert.error{background:rgba(248,113,113,.15);border:1px solid var(--danger);color:var(--danger)}
+  .alert{position:fixed;top:20px;right:20px;z-index:200;max-width:360px;padding:12px 20px;background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:48px;color:#fff;font-size:13px;font-weight:400;animation:slideIn .3s}
+  .alert.info{border-color:var(--text-secondary)}
+  .alert.success{border-color:var(--accent-cool)}
+  .alert.error{border-color:var(--danger)}
 
-  /* DISCLAIMER */
-  .disclaimer{margin-top:24px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;font-size:11px;color:var(--text-muted);line-height:1.6;text-align:center}
+  .disclaimer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:11px;line-height:1.7;color:var(--text-muted);max-width:80ch}
 
   @media (max-width:640px){
-    .form-row{grid-template-columns:1fr}
-    .hero-title{font-size:24px}
+    .container{padding:16px 16px 48px}
+    .form-row{grid-template-columns:1fr;gap:0}
+    .hero{padding:44px 0 32px}
+    .hero::after{margin-top:32px}
+    .hero-title{font-size:72px}
     .header{flex-direction:column;align-items:flex-start}
+    .status-pill{display:none}
+    .panel{border-radius:28px}
+    .panel-header{padding:22px 20px 0}
+    .panel-body{padding:20px}
+    .twitch-user{min-width:0}
+    .alert{left:16px;right:16px;max-width:none}
   }
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 </style>
 </head>
 <body>
@@ -174,6 +186,7 @@
 
   <!-- HERO -->
   <div class="hero">
+    <span class="hero-eyebrow">League of Legends</span>
     <h1 class="hero-title" data-i18n="hero_title">Rank LoL</h1>
     <div class="hero-desc" data-i18n="hero_desc">Comandos customizados para exibir o seu rank de League of Legends em tempo real na Twitch</div>
   </div>
@@ -215,7 +228,7 @@
         </select>
       </div>
       <button class="btn" id="searchBtn" onclick="searchPlayer()">
-        <span data-i18n="btn_search">🔍 Buscar Jogador</span>
+        <span data-i18n="btn_search">Buscar Jogador</span>
       </button>
 
       <!-- resultado -->
@@ -347,7 +360,7 @@
       </div>
 
       <button class="btn" id="genBtn" onclick="generateCommand()">
-        <span data-i18n="btn_test">⚙️ Gerar Comando</span>
+        <span data-i18n="btn_test">Gerar Comando</span>
       </button>
 
       <!-- resultado -->
@@ -427,7 +440,7 @@ const I18N = {
     lbl_nick: 'Nick',
     lbl_tag: 'Tag',
     lbl_region: 'Região',
-    btn_search: '🔍 Buscar Jogador',
+    btn_search: 'Buscar Jogador',
     player_found: 'Jogador encontrado',
     cmd_title: 'Gerar Comando',
     step02: 'PASSO 02',
@@ -442,7 +455,7 @@ const I18N = {
     vars_ranked: 'Ranked',
     vars_stats: 'Estatísticas',
     hint_syntax: 'Você pode usar parênteses <code>(player)</code> ou chaves <code>{player}</code> — os dois funcionam.',
-    btn_test: '⚙️ Gerar Comando',
+    btn_test: 'Gerar Comando',
     preview_label: 'Como aparecerá na Twitch',
     t_user: 'Usuário',
     cmd_se: 'Resposta do comando (cole no StreamElements)',
@@ -467,7 +480,7 @@ const I18N = {
     lbl_nick: 'Name',
     lbl_tag: 'Tag',
     lbl_region: 'Region',
-    btn_search: '🔍 Search Player',
+    btn_search: 'Search Player',
     player_found: 'Player found',
     cmd_title: 'Generate Command',
     step02: 'STEP 02',
@@ -482,7 +495,7 @@ const I18N = {
     vars_ranked: 'Ranked',
     vars_stats: 'Stats',
     hint_syntax: 'You can use parentheses <code>(player)</code> or braces <code>{player}</code> — both work.',
-    btn_test: '⚙️ Generate Command',
+    btn_test: 'Generate Command',
     preview_label: 'How it will look on Twitch',
     t_user: 'User',
     cmd_se: 'Command response (paste into StreamElements)',
