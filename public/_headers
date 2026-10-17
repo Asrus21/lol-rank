@@ -1,0 +1,5 @@
+# A página muda a cada deploy: o navegador sempre confere se há versão nova.
+/*
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

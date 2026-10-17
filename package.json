@@ -1,11 +1,15 @@
 {
   "name": "riot-uuid-system",
   "version": "1.0.0",
-  "description": "Sistema de UUID persistente para League of Legends com custom commands",
+  "description": "Rank de League of Legends + comandos customizados para o chat (elorank-games.com.br/rank-lol)",
   "main": "server.js",
   "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "wrangler deploy --dry-run --outdir dist",
+    "test": "node --test test/*.test.js",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "legado:dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -13,9 +17,14 @@
     "axios": "^1.7.2",
     "uuid": "^10.0.0",
     "dotenv": "^16.4.5",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "hono": "^4.13.13",
+    "@neondatabase/serverless": "^1.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.1"
   }
 }

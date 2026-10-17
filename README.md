@@ -1,84 +1,88 @@
-# Rank LoL — asrus.app
+# Rank LoL — EloRank Games
 
-Ferramenta para streamers da Twitch exibirem o próprio rank de **League of Legends** no chat, em tempo real, através de comandos customizados.
+Rank de **League of Legends** de qualquer jogador e comando pronto para o chat
+da live (StreamElements). Endereço: **https://elorank-games.com.br/rank-lol**
 
----
+Roda em **Cloudflare Workers**. O gateway do domínio (repositório
+`elorank-games`) repassa `/rank-lol`, as APIs (`/api/lol/*`, `/api/register`,
+`/api/player/*`, `/api/command*`), os comandos (`/cmd/lol/*`, `/cmd/UUID/NOME`) e
+`api.elorank-games.com.br/lol/*` para este Worker.
 
-## O que o site faz
-
-Gera comandos prontos para colar no **StreamElements** (ou qualquer bot que aceite `$(customapi ...)`). Quando alguém digita o comando no chat da Twitch, o bot responde com o seu rank atual, LP, vitórias e mais — sempre atualizado.
-
----
-
-## Funcionalidades
-
-### Busca de jogador
-- Por **Nick + Tag + Região**
-- Ou por um **UUID** já gerado anteriormente
-
-### UUID persistente
-Cada jogador recebe um UUID único que **não muda**, mesmo que você troque de nick ou tag no jogo. O comando criado no StreamElements continua funcionando para sempre, sem precisar atualizar nada.
-
-### Montar e testar comandos
-Você escolhe o nome do comando, monta uma frase usando variáveis, e o site mostra:
-
-- **Como ficará na Twitch** (preview da resposta do bot)
-- **O comando pronto** `$(customapi ...)` para copiar e colar no StreamElements
-
-### Filas suportadas
-- Ranked Solo/Duo
-- Ranked Flex
-
-### Sintaxe flexível dos templates
-Você pode usar parênteses ou chaves — os dois funcionam:
+## Estrutura
 
 ```
-(player) está (rank) com (pontos) pontos
-{player} está {rank} com {pontos} pontos
+src/
+  index.js     entrada do Worker (monta banco Neon + Riot com os segredos)
+  app.js       rotas (Hono) — as mesmas do servidor antigo
+  banco.js     SQL: lol_players, custom_commands e accounts (compartilhada)
+  riot.js      API da Riot (conta, invocador, liga) e regiões
+  template.js  monta o texto do comando (funções puras)
+  html.js      página do comando quando aberto no navegador
+public/
+  index.html   página (design system EloRank: /ds/elorank.css)
+test/          testes (npm test)
+wrangler.jsonc configuração do Worker
+server.js      servidor ANTIGO (Express na Vercel) — ver "Transição"
 ```
 
-### Variáveis disponíveis
+## Rotas
 
-**Geral:** `(player)` · `(tag)` · `(region)`
-
-**Ranked:** `(rank)` · `(tier)` · `(divisao)` · `(pontos)` · `(lp)`
-
-**Estatísticas:** `(vitorias)` · `(derrotas)` · `(winrate)` · `(jogos)`
-
-### Elos em português
-A Riot retorna tudo em inglês, mas o site traduz automaticamente:
-
-| Riot | Exibido |
+| Rota | O que faz |
 |---|---|
-| IRON | Ferro |
-| BRONZE | Bronze |
-| SILVER | Prata |
-| GOLD | Ouro |
-| PLATINUM | Platina |
-| EMERALD | Esmeralda |
-| DIAMOND | Diamante |
-| MASTER | Mestre |
-| GRANDMASTER | Grão-Mestre |
-| CHALLENGER | Desafiante |
+| `POST /api/register` | `{ gameName, tagLine, region }` → registra e devolve o ID EloRank (`account_id`) |
+| `GET /api/player/:uuid` | Dados do jogador |
+| `GET /api/lol/cmd/:id` | Comando do bot. `:id` = ID EloRank ou puuid antigo |
+| `GET /api/lol/cmd?nick=&tag=&region=` | Comando por nick (também `?player=Nome%23Tag`) |
+| `GET /cmd/lol/...` | O mesmo, caminho antigo |
+| `GET /cmd/:uuid/:nome` | Comando salvo no formato antigo (texto) |
+| `POST /api/command` · `GET /api/command/:uuid/:nome` · `GET /api/commands/:uuid` · `DELETE /api/command/:uuid/:nome` | Comandos salvos (formato antigo) |
 
-E as divisões aparecem em número (`II` vira `2`, `III` vira `3`...). Mestre, Grão-Mestre e Desafiante aparecem sem divisão.
+Parâmetros do comando: `msg` (template; aspas externas são removidas), `queue`
+ou `mode` (`lol_solo`, `lol_flex`), `lang` (`pt`, `en`), `region`. Aberto no
+navegador, o comando mostra uma página; bots recebem texto puro
+(`?format=text` / `?format=html` forçam um ou outro).
 
----
-
-## Exemplo
-
-Template no painel:
+Comando gerado pelo site:
 ```
-(player) está (rank) com (pontos) pontos · (winrate) de winrate
+$(customapi https://api.elorank-games.com.br/lol/cmd/ID?region=br1&msg="(player) está (rank) com (pontos) pontos"&queue=lol_solo&lang=pt)
 ```
 
-No chat aparece:
+Variáveis: `(player)` `(tag)` `(region)` · `(rank)` `(tier)` `(divisao)`
+`(pontos)` `(lp)` · `(vitorias)` `(derrotas)` `(winrate)` `(jogos)` — também
+`{var}`, sem diferenciar maiúsculas.
+
+## Publicar (Cloudflare)
+
+1. **Workers & Pages → Create → Import a repository** → `Asrus21/lol-rank`.
+   O nome do Worker precisa ser **`rank-lol`**. Comando de deploy:
+   `npx wrangler deploy`.
+2. **Settings → Variables and Secrets**, como *Secret*: `RIOT_API_KEY` e
+   `DATABASE_URL` (a mesma do TFT e do Valorant).
+3. No repositório `elorank-games`, ative o binding `RANK_LOL`.
+
+## Desenvolvimento
+
+```sh
+npm install
+npm test          # rotas e template (banco e Riot falsos)
+npm run check     # valida o build do Worker
+npx wrangler dev  # local; segredos em .dev.vars (não vai para o git)
 ```
-asrus está Prata 2 com 50 pontos · 58% de winrate
-```
 
----
+SQL de verdade contra um Postgres descartável:
+`TEST_DATABASE_URL=postgres://... npm test` (as tabelas são apagadas).
 
-## Disclaimer
+## Transição
 
-asrus.app isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+`server.js` + `vercel.json` são o servidor antigo, ainda publicado na Vercel
+(`lol-tft-rank.vercel.app`). Os comandos de bot antigos (`api.asrus.app/lol/...`,
+`asrus.app/cmd/...`, `asrus.app/api/...`) dependem dele. Quando o `asrus.app`
+passar a repassar esses caminhos para o domínio novo, apague `server.js`,
+`vercel.json` e as dependências do Express, e desligue o projeto na Vercel.
+
+## Aviso
+
+EloRank Games não é endossado pela Riot Games e não reflete as opiniões da Riot
+Games ou de quem está envolvido oficialmente com seus produtos. Riot Games,
+League of Legends e todas as marcas associadas são marcas registradas da Riot
+Games, Inc.
