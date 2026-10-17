@@ -1,740 +1,469 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR" data-jogo="lol">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rank LoL — asrus.app</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  /* ==========================================================================
-     Referência: Galileo-ft, no Refero Styles ("deep-space command deck").
-     Marinho do espaço profundo, títulos em Inter 100 que quase viram fio,
-     cartões de 35px em índigo, fios de 1px em violeta-tinta e botões-pílula.
-     O acento único do modelo (o cobalto) vira o DOURADO do LoL, e o "Signal
-     Teal" do modelo faz o papel do azul hextech — o par ouro + teal do jogo.
-     ========================================================================== */
-  *{margin:0;padding:0;box-sizing:border-box}
-
-  :root{
-    --bg-primary:#03081a;      /* Void Navy */
-    --bg-secondary:#020626;    /* Deep Indigo */
-    --bg-card:#020626;
-    --bg-elevated:#0a1035;
-    --border:#292f66;          /* Inkline Violet */
-    --border-light:#4d5499;    /* Dusk Iris */
-    --text-primary:#ffffff;
-    --text-secondary:#aab1f2;  /* Quartz Lavender */
-    --text-muted:#7a83cc;      /* Mist Lilac */
-    --accent:#c8aa6e;          /* ouro do LoL no papel do Pulse Cobalt */
-    --accent-hot:#f0e6d2;
-    --accent-cool:#05e0e0;     /* Signal Teal = hextech */
-    --success:#05e0e0;
-    --warning:#f0c86e;
-    --danger:#ff8a9a;
-    --sans:'Inter',system-ui,-apple-system,sans-serif;
-    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
-  }
-
-  html,body{font-family:var(--sans);font-weight:300;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-  /* Atmosfera: um brilho teal → índigo bem ao fundo, como o banner do modelo. */
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(900px 520px at 85% -10%,rgba(5,161,201,.16),transparent 60%),radial-gradient(700px 500px at 0% 100%,rgba(61,80,252,.10),transparent 60%);pointer-events:none;z-index:0}
-  :focus-visible{outline:1px solid var(--accent-cool);outline-offset:3px}
-
-  .container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 24px 64px}
-
-  /* HEADER — marca à esquerda, pílulas de navegação à direita */
-  .header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 0 20px;border-bottom:1px solid var(--border);margin-bottom:8px}
-  .logo{display:flex;align-items:center;gap:12px;font-weight:400;font-size:17px;letter-spacing:-.01em}
-  .logo-icon{width:34px;height:34px;border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px}
-  .logo-sub{font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin-top:2px}
-  .header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .home-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--text-secondary);border-radius:48px;color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:400;transition:border-color .2s,color .2s}
-  .home-btn:hover{border-color:#fff;color:#fff}
-  .lang-switch{display:inline-flex;border:1px solid var(--text-secondary);border-radius:48px;padding:2px}
-  .lang-btn{border:none;background:transparent;color:var(--text-secondary);font:inherit;font-size:12px;font-weight:400;padding:6px 12px;border-radius:48px;cursor:pointer;transition:background .2s,color .2s}
-  .lang-btn.active{background:#fff;color:var(--bg-primary)}
-  .status-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border);border-radius:48px;font-size:10px;letter-spacing:.25em;color:var(--text-secondary)}
-  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-cool);box-shadow:0 0 10px var(--accent-cool);animation:pulse 2s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.35}}
-
-  /* HERO — o título ultrafino (peso 100) é a assinatura do modelo */
-  .hero{padding:72px 0 48px}
-  .hero-eyebrow{display:block;font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:22px}
-  .hero-title{font-weight:100;font-size:clamp(64px,13vw,140px);line-height:.85;letter-spacing:-.02em;color:#fff}
-  .hero-desc{max-width:46ch;margin-top:28px;font-size:16px;line-height:1.6;color:var(--text-secondary)}
-  /* Fio teal → ouro sob o hero: a "faixa de energia" do banner do Galileo. */
-  .hero::after{content:'';display:block;height:1px;margin-top:48px;background:linear-gradient(90deg,var(--accent-cool),var(--accent) 60%,transparent)}
-
-  /* PAINÉIS — cartões de 35px em índigo profundo, fio violeta-tinta */
-  .panel{background:var(--bg-card);border:1px solid var(--border);border-radius:35px;margin-bottom:20px;overflow:hidden}
-  .panel-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:28px 32px 0}
-  .panel-title{font-size:28px;font-weight:100;letter-spacing:-.02em;line-height:1.3}
-  .panel-title::before{content:none}
-  .panel-badge{font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
-  .panel-body{padding:24px 32px 32px}
-
-  .form-group{margin-bottom:18px}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  label{display:block;font-size:10px;font-weight:400;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin:0 0 8px 18px}
-  input,select,textarea{width:100%;padding:13px 18px;background:var(--bg-primary);color:#fff;border:1px solid var(--border);border-radius:35px;font:inherit;font-size:15px;font-weight:300;transition:border-color .2s}
-  input::placeholder,textarea::placeholder{color:var(--border-light)}
-  input:hover,select:hover,textarea:hover{border-color:var(--border-light)}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent-cool)}
-  select option{background:var(--bg-secondary)}
-  textarea{min-height:92px;border-radius:24px;resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.6}
-
-  .method-tabs{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--border);border-radius:48px;margin-bottom:16px}
-  .method-tab{padding:8px 16px;border-radius:48px;cursor:pointer;font-size:13px;font-weight:400;color:var(--text-secondary);transition:background .2s,color .2s}
-  .method-tab:hover{color:#fff}
-  .method-tab.active{background:#fff;color:var(--bg-primary)}
-  .method-panel{display:none}
-  .method-panel.active{display:block}
-
-  /* Ação principal: pílula cheia no acento (ouro), sem sombra nem borda. */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 22px;background:var(--accent);color:var(--bg-primary);border:none;border-radius:48px;font:inherit;font-size:16px;font-weight:400;cursor:pointer;transition:filter .2s,transform .1s}
-  .btn:hover{filter:brightness(1.08)}
-  .btn:active{transform:scale(.99)}
-  .btn:disabled{opacity:.55;cursor:not-allowed;filter:none}
-
-  .player-found{display:none;margin-top:22px;padding:22px 24px;border:1px solid var(--border);border-radius:24px;background:var(--bg-primary);animation:slideIn .3s}
-  .player-found.show{display:block}
-  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-  .player-found-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:10px}
-  .player-found-name{font-size:28px;font-weight:100;letter-spacing:-.02em}
-  .player-found-region{font-size:13px;color:var(--text-secondary);margin:4px 0 16px}
-  .uuid-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
-  .uuid-code{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;border:1px solid var(--border);border-radius:35px;font-family:var(--mono);font-size:12px;color:#fff;word-break:break-all}
-  .uuid-code span{flex:1;min-width:0}
-  .copy-btn{flex:none;padding:7px 16px;background:transparent;color:#fff;border:1px solid #fff;border-radius:48px;font:inherit;font-size:12px;font-weight:400;letter-spacing:.08em;cursor:pointer;transition:background .2s,color .2s}
-  .copy-btn:hover{background:#fff;color:var(--bg-primary)}
-
-  .vars-section-title{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);margin:16px 0 8px 2px}
-  .vars-help{display:flex;flex-wrap:wrap;gap:6px}
-  .var-chip{padding:5px 12px;border:1px solid var(--border-light);border-radius:17px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text-secondary);transition:border-color .2s,color .2s}
-  .var-chip:hover{border-color:var(--accent);color:var(--accent)}
-
-  .twitch-preview{margin-top:22px;padding:24px;border:1px solid var(--border);border-radius:24px;background:var(--bg-primary)}
-  .twitch-line{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;flex-wrap:wrap}
-  .twitch-line:last-child{border-bottom:none}
-  .twitch-user{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-muted);min-width:120px}
-  .twitch-arrow{color:var(--border-light)}
-  .twitch-msg{color:#fff;font-weight:300;word-break:break-word}
-  .twitch-msg.bot{color:var(--accent)}
-  .twitch-divider{border:none;height:1px;background:var(--border);margin:16px 0}
-  .preview-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-cool);margin-bottom:10px}
-  .copy-field{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 0;border:1px solid var(--border);border-radius:35px}
-  .copy-field input{flex:1;min-width:0;border:none;background:transparent;font-family:var(--mono);font-size:12px;padding:9px 16px}
-  .copy-field input:focus{border:none}
-
-  .hint{font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:8px}
-  .hint code{font-family:var(--mono);font-size:12px;color:var(--text-secondary);background:var(--bg-elevated);padding:1px 6px;border-radius:6px}
-
-  .subsection{padding:20px 22px;border:1px solid var(--border);border-radius:24px;margin-bottom:20px}
-  .subsection-title{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-  .subsection-title::before{content:none}
-
-  .spinner{width:14px;height:14px;border:2px solid rgba(3,8,26,.25);border-top-color:var(--bg-primary);border-radius:50%;animation:spin .6s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  .alert{position:fixed;top:20px;right:20px;z-index:200;max-width:360px;padding:12px 20px;background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:48px;color:#fff;font-size:13px;font-weight:400;animation:slideIn .3s}
-  .alert.info{border-color:var(--text-secondary)}
-  .alert.success{border-color:var(--accent-cool)}
-  .alert.error{border-color:var(--danger)}
-
-  .disclaimer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:11px;line-height:1.7;color:var(--text-muted);max-width:80ch}
-
-  @media (max-width:640px){
-    .container{padding:16px 16px 48px}
-    .form-row{grid-template-columns:1fr;gap:0}
-    .hero{padding:44px 0 32px}
-    .hero::after{margin-top:32px}
-    .hero-title{font-size:72px}
-    .header{flex-direction:column;align-items:flex-start}
-    .status-pill{display:none}
-    .panel{border-radius:28px}
-    .panel-header{padding:22px 20px 0}
-    .panel-body{padding:20px}
-    .twitch-user{min-width:0}
-    .alert{left:16px;right:16px;max-width:none}
-  }
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rank LoL — EloRank Games</title>
+  <meta name="description" content="Busque o rank de League of Legends de qualquer jogador e gere o comando pronto para o chat da sua live no StreamElements.">
+  <link rel="canonical" href="https://elorank-games.com.br/rank-lol">
+  <meta name="theme-color" content="#040506">
+  <link rel="icon" href="https://elorank-games.com.br/favicon.svg" type="image/svg+xml">
+  <!-- Design system compartilhado: o script vem antes do CSS (aplica o tema sem piscar). -->
+  <script src="https://elorank-games.com.br/ds/elorank.js?v=3"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://elorank-games.com.br/ds/elorank.css?v=3">
+  <style>
+    /* Só o layout desta página; componentes e cores vêm do /ds/elorank.css. */
+    .hero { position: relative; isolation: isolate; padding: var(--s10) 0 var(--s6); display: grid; gap: var(--s2); justify-items: start; }
+    .hero .er-lead { max-width: 560px; }
+    .conteudo { padding-bottom: var(--s10); }
+    .etapas { display: grid; grid-template-columns: 5fr 7fr; gap: var(--s2); align-items: start; }
+    @media (max-width: 960px) { .etapas { grid-template-columns: 1fr; } }
+    .largo { width: 100%; }
+    .dica { margin: 0 0 var(--s2); font-size: 13px; line-height: 1.55; color: var(--text-3); }
+    .dica code { font-family: var(--mono); color: var(--text-2); }
+    .resultado { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--badge); display: grid; gap: 12px; }
+    .resultado-titulo { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+    .resultado-titulo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+    .jogador-info { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--text-2); }
+    .jogador-info strong { color: var(--text); font-weight: 500; }
+    .quem { padding: var(--s2); margin-bottom: var(--s3); border-radius: 12px; background: var(--recessed); box-shadow: inset 0 0 0 1px var(--badge); }
+    .quem .er-seg { margin-bottom: var(--s2); background: var(--card); }
+    .quem .er-field:last-child { margin-bottom: 0; }
+    .grupo-vars { display: grid; gap: 6px; margin-bottom: 12px; }
+    .grupo-vars .er-eyebrow { font-size: 10px; }
+    .previa { margin-top: var(--s3); display: grid; gap: var(--s2); }
+    .er-chat-linha + .er-chat-linha { padding-top: 0; }
+    .er-chat-quem.usuario { color: var(--text-3); }
+    .seta { color: var(--text-3); margin-right: 8px; }
+    .er-nav-links a[aria-current="page"] { color: var(--text); }
+    .er-footer .legal { margin: 0 0 var(--s2); max-width: 720px; line-height: 1.6; }
+  </style>
 </head>
 <body>
-<div class="container">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-marca" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5 22.5 12 12 22.5 1.5 12Z"/><path style="fill:var(--canvas)" d="M12 7.5 16.5 12 12 16.5 7.5 12Z"/></symbol>
+    <symbol id="i-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></symbol>
+  </svg>
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="logo">
-      <div class="logo-icon">⚔️</div>
-      <div>
-        <span data-i18n="brand">Rank LoL</span>
-        <div class="logo-sub" data-i18n="brand_sub">League of Legends · Custom Commands</div>
+  <div class="er-container er-nav-wrap" id="topo">
+    <nav class="er-nav" aria-label="Principal">
+      <span class="er-nav-marca">
+        <a class="er-brand" href="https://elorank-games.com.br/" aria-label="EloRank Games — página inicial">
+          <svg class="er-brand-mark" aria-hidden="true"><use href="#i-marca"/></svg>
+          <span class="er-brand-nome">EloRank Games</span>
+        </a>
+        <a class="er-nav-projeto" href="#topo" data-er-topo>LoL</a>
+      </span>
+      <div class="er-nav-links">
+        <a href="https://elorank-games.com.br/rank-valorant/">Valorant</a>
+        <a href="https://elorank-games.com.br/rank-lol" aria-current="page">League of Legends</a>
+        <a href="https://elorank-games.com.br/rank-tft">TFT</a>
       </div>
-    </div>
-    <div class="header-right">
-      <a href="https://asrus.app/" class="home-btn" title="Inicio">← <span data-i18n="home">Inicio</span></a>
-      <div class="lang-switch">
-        <button class="lang-btn active" data-lang="pt" onclick="setLang('pt')">PT</button>
-        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <div class="er-nav-acoes">
+        <div class="er-seg er-seg-sm" role="group" aria-label="Idioma">
+          <button type="button" data-lang="pt" aria-pressed="true">PT</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <button class="er-theme-toggle" type="button" data-er-tema aria-label="Mudar tema">
+          <svg class="er-i-sol" aria-hidden="true"><use href="#i-sol"/></svg>
+          <svg class="er-i-lua" aria-hidden="true"><use href="#i-lua"/></svg>
+        </button>
       </div>
-      <div class="status-pill"><div class="status-dot"></div>ONLINE</div>
-    </div>
+    </nav>
   </div>
 
-  <!-- HERO -->
-  <div class="hero">
-    <span class="hero-eyebrow">League of Legends</span>
-    <h1 class="hero-title" data-i18n="hero_title">Rank LoL</h1>
-    <div class="hero-desc" data-i18n="hero_desc">Comandos customizados para exibir o seu rank de League of Legends em tempo real na Twitch</div>
-  </div>
+  <main class="er-container conteudo">
+    <header class="hero">
+      <div class="er-atmos" aria-hidden="true"></div>
+      <span class="er-badge er-badge-dot">League of Legends</span>
+      <h1 class="er-display">Rank LoL</h1>
+      <p class="er-lead" data-i18n="hero_desc">Busque o jogador, monte a mensagem e copie o comando pronto para o chat da sua live.</p>
+    </header>
 
-  <!-- PASSO 1: BUSCAR PUUID (só nick+tag, resultado mostra PUUID) -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title" data-i18n="search_title">Buscar Jogador</div>
-      <div class="panel-badge" data-i18n="step01">PASSO 01</div>
-    </div>
-    <div class="panel-body">
-
-      <div class="hint" style="margin-top:0;margin-bottom:14px" data-i18n="hint_step1">Use para descobrir o PUUID de um jogador. O PUUID é necessário para gerar comandos no Passo 02.</div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label data-i18n="lbl_nick">Nick</label>
-          <input type="text" id="searchGameName" placeholder="ex: asrus" autocomplete="off">
+    <div class="etapas">
+      <!-- PASSO 1: buscar jogador (descobre o ID EloRank) -->
+      <section class="er-card" aria-labelledby="t-busca">
+        <div class="er-card-head">
+          <h2 class="er-h3" id="t-busca" data-i18n="search_title">Buscar jogador</h2>
+          <span class="er-badge" data-i18n="step01">Passo 1</span>
         </div>
-        <div class="form-group">
-          <label data-i18n="lbl_tag">Tag</label>
-          <input type="text" id="searchTagLine" placeholder="ex: BR1" autocomplete="off">
-        </div>
-      </div>
-      <div class="form-group">
-        <label data-i18n="lbl_region">Região</label>
-        <select id="searchRegion">
-          <option value="br1">BR1 — Brasil</option>
-          <option value="na1">NA1 — North America</option>
-          <option value="euw1">EUW1 — Europe West</option>
-          <option value="eun1">EUN1 — Europe Nordic &amp; East</option>
-          <option value="kr">KR — Korea</option>
-          <option value="jp1">JP1 — Japan</option>
-          <option value="la1">LA1 — Latin America North</option>
-          <option value="la2">LA2 — Latin America South</option>
-          <option value="oc1">OC1 — Oceania</option>
-          <option value="tr1">TR1 — Turkey</option>
-          <option value="ru">RU — Russia</option>
-        </select>
-      </div>
-      <button class="btn" id="searchBtn" onclick="searchPlayer()">
-        <span data-i18n="btn_search">Buscar Jogador</span>
-      </button>
+        <p class="dica" data-i18n="hint_step1">Descubra o ID EloRank do jogador. O mesmo ID vale para LoL, TFT e Valorant.</p>
 
-      <!-- resultado -->
-      <div id="playerFound" class="player-found">
-        <div class="player-found-label">✓ <span data-i18n="player_found">Jogador encontrado</span></div>
-        <div class="player-found-name" id="pfName"></div>
-        <div class="player-found-region" id="pfRegion"></div>
-        <div class="uuid-label">ID asrus (vale p/ LoL, TFT e Valorant)</div>
-        <div class="uuid-code">
-          <span id="pfPuuid"></span>
-          <button class="copy-btn" onclick="copyPuuid()">COPY</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PASSO 2: GERAR COMANDO (totalmente independente do passo 1) -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title" data-i18n="cmd_title">Gerar Comando</div>
-      <div class="panel-badge" data-i18n="step02">PASSO 02</div>
-    </div>
-    <div class="panel-body">
-
-      <!-- subseção: identificar o jogador (próprio do passo 2) -->
-      <div class="subsection">
-        <div class="subsection-title" data-i18n="who_label">Jogador para o comando</div>
-
-        <div class="method-tabs">
-          <div class="method-tab active" data-method="riotid" onclick="selectGenMethod('riotid')"><span data-i18n="m_nicktag">Nick + Tag</span></div>
-          <div class="method-tab" data-method="puuid" onclick="selectGenMethod('puuid')">ID asrus</div>
-        </div>
-
-        <!-- método: nick + tag + região -->
-        <div class="method-panel active" id="gen-panel-riotid">
-          <div class="form-row">
-            <div class="form-group" style="margin-bottom:12px">
-              <label data-i18n="lbl_nick">Nick</label>
-              <input type="text" id="genGameName" placeholder="ex: asrus" autocomplete="off">
+        <form id="formBusca" novalidate>
+          <div class="er-row">
+            <div class="er-field">
+              <label class="er-label" for="searchGameName" data-i18n="lbl_nick">Nick</label>
+              <input class="er-input" type="text" id="searchGameName" placeholder="ex: asrus" autocomplete="off" spellcheck="false">
             </div>
-            <div class="form-group" style="margin-bottom:12px">
-              <label data-i18n="lbl_tag">Tag</label>
-              <input type="text" id="genTagLine" placeholder="ex: BR1" autocomplete="off">
+            <div class="er-field">
+              <label class="er-label" for="searchTagLine" data-i18n="lbl_tag">Tag</label>
+              <input class="er-input" type="text" id="searchTagLine" placeholder="ex: BR1" autocomplete="off" spellcheck="false" maxlength="6">
             </div>
           </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label data-i18n="lbl_region">Região</label>
-            <select id="genRegion">
-              <option value="br1">BR1 — Brasil</option>
-              <option value="na1">NA1 — North America</option>
-              <option value="euw1">EUW1 — Europe West</option>
-              <option value="eun1">EUN1 — Europe Nordic &amp; East</option>
-              <option value="kr">KR — Korea</option>
-              <option value="jp1">JP1 — Japan</option>
-              <option value="la1">LA1 — Latin America North</option>
-              <option value="la2">LA2 — Latin America South</option>
-              <option value="oc1">OC1 — Oceania</option>
-              <option value="tr1">TR1 — Turkey</option>
-              <option value="ru">RU — Russia</option>
-            </select>
+          <div class="er-field">
+            <label class="er-label" for="searchRegion" data-i18n="lbl_region">Região</label>
+            <select class="er-input er-select" id="searchRegion" data-regioes></select>
+          </div>
+          <button class="er-btn er-btn-primary largo" type="submit" id="searchBtn" data-i18n="btn_search">Buscar jogador</button>
+        </form>
+
+        <div class="resultado er-surge" id="playerFound" hidden aria-live="polite">
+          <div class="resultado-titulo" data-i18n="player_found">ID EloRank (vale para LoL, TFT e Valorant)</div>
+          <div class="er-copy">
+            <code class="er-code" id="pfPuuid"></code>
+            <button class="er-btn er-btn-ghost er-btn-sm" type="button" id="copyId" data-i18n="copy">Copiar</button>
+          </div>
+          <div class="jogador-info">
+            <span><span data-i18n="player">Jogador</span>: <strong id="pfName"></strong></span>
+            <span><span data-i18n="region">Região</span>: <strong id="pfRegion"></strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASSO 2: gerar comando (independente do passo 1) -->
+      <section class="er-card" aria-labelledby="t-cmd">
+        <div class="er-card-head">
+          <h2 class="er-h3" id="t-cmd" data-i18n="cmd_title">Gerar comando</h2>
+          <span class="er-badge" data-i18n="step02">Passo 2</span>
+        </div>
+
+        <div class="quem">
+          <span class="er-label" data-i18n="who_label">Jogador do comando</span>
+          <div class="er-seg" role="tablist" aria-label="Como identificar o jogador">
+            <button type="button" role="tab" data-method="riotid" aria-selected="true" data-i18n="m_nicktag">Nick + Tag</button>
+            <button type="button" role="tab" data-method="puuid" aria-selected="false" data-i18n="m_id">ID EloRank</button>
+          </div>
+
+          <div id="gen-panel-riotid">
+            <div class="er-row">
+              <div class="er-field">
+                <label class="er-label" for="genGameName" data-i18n="lbl_nick">Nick</label>
+                <input class="er-input" type="text" id="genGameName" placeholder="ex: asrus" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="er-field">
+                <label class="er-label" for="genTagLine" data-i18n="lbl_tag">Tag</label>
+                <input class="er-input" type="text" id="genTagLine" placeholder="ex: BR1" autocomplete="off" spellcheck="false" maxlength="6">
+              </div>
+            </div>
+            <div class="er-field">
+              <label class="er-label" for="genRegion" data-i18n="lbl_region">Região</label>
+              <select class="er-input er-select" id="genRegion" data-regioes></select>
+            </div>
+          </div>
+
+          <div id="gen-panel-puuid" hidden>
+            <div class="er-field">
+              <label class="er-label" for="genPuuid" data-i18n="lbl_id">ID EloRank</label>
+              <input class="er-input" type="text" id="genPuuid" placeholder="ex: a3f1c9e2-7b4d-4e21-9c8a-..." autocomplete="off" spellcheck="false">
+            </div>
+            <div class="er-field">
+              <label class="er-label" for="genPuuidRegion" data-i18n="lbl_region_lol">Região do LoL</label>
+              <select class="er-input er-select" id="genPuuidRegion" data-regioes></select>
+            </div>
           </div>
         </div>
 
-        <!-- método: puuid -->
-        <div class="method-panel" id="gen-panel-puuid">
-          <div class="form-group" style="margin-bottom:12px">
-            <label>ID asrus</label>
-            <input type="text" id="genPuuid" placeholder="ex: a3f1c9e2-7b4d-4e21-9c8a-..." autocomplete="off">
-            <div class="hint" data-i18n="hint_puuid_use">Use o ID asrus obtido no Passo 01 (o mesmo ID vale para LoL, TFT e Valorant).</div>
+        <div class="er-field">
+          <label class="er-label" for="queueSelect" data-i18n="lbl_queue">Fila</label>
+          <select class="er-input er-select" id="queueSelect">
+            <option value="lol_solo" data-i18n="q_solo">Ranqueada Solo/Duo</option>
+            <option value="lol_flex" data-i18n="q_flex">Ranqueada Flex</option>
+          </select>
+        </div>
+
+        <div class="er-field">
+          <span class="er-label" data-i18n="lbl_vars">Variáveis (clique para inserir)</span>
+          <div class="grupo-vars"><span class="er-eyebrow" data-i18n="vars_general">Geral</span><div class="er-chips" data-vars="player tag region"></div></div>
+          <div class="grupo-vars"><span class="er-eyebrow" data-i18n="vars_ranked">Ranqueada</span><div class="er-chips" data-vars="rank tier divisao pontos lp"></div></div>
+          <div class="grupo-vars"><span class="er-eyebrow" data-i18n="vars_stats">Estatísticas</span><div class="er-chips" data-vars="vitorias derrotas winrate jogos"></div></div>
+        </div>
+
+        <div class="er-field">
+          <label class="er-label" for="commandTemplate" data-i18n="lbl_template">Mensagem</label>
+          <textarea class="er-input" id="commandTemplate" rows="3" spellcheck="false"></textarea>
+        </div>
+        <p class="dica" data-i18n-html="hint_syntax">Pode usar parênteses <code>(player)</code> ou chaves <code>{player}</code> — os dois funcionam.</p>
+
+        <button class="er-btn er-btn-ghost largo" type="button" id="genBtn" data-i18n="btn_test">Gerar comando</button>
+
+        <div class="previa er-surge" id="testResult" hidden aria-live="polite">
+          <div class="er-chat">
+            <div class="er-chat-bar"><span class="er-eyebrow" data-i18n="preview_label">Prévia no chat</span></div>
+            <div class="er-chat-linha"><span class="er-chat-quem usuario" data-i18n="t_user">Espectador</span><span class="seta">→</span><span id="twitchUserCmd">!elo</span></div>
+            <div class="er-chat-linha"><span class="er-chat-quem">StreamElements</span><span class="seta">→</span><span id="twitchBotMsg"></span></div>
           </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label data-i18n="lbl_region">Região (do LoL)</label>
-            <select id="genPuuidRegion">
-              <option value="br1">BR1 — Brasil</option>
-              <option value="na1">NA1 — North America</option>
-              <option value="euw1">EUW1 — Europe West</option>
-              <option value="eun1">EUN1 — Europe Nordic &amp; East</option>
-              <option value="kr">KR — Korea</option>
-              <option value="jp1">JP1 — Japan</option>
-              <option value="la1">LA1 — Latin America North</option>
-              <option value="la2">LA2 — Latin America South</option>
-              <option value="oc1">OC1 — Oceania</option>
-              <option value="tr1">TR1 — Turkey</option>
-              <option value="ru">RU — Russia</option>
-            </select>
-            <div class="hint">A região do LoL pode ser diferente da do Valorant — confirme aqui.</div>
+          <div class="er-field">
+            <span class="er-label" data-i18n="cmd_se">Comando para o StreamElements</span>
+            <div class="er-copy">
+              <code class="er-code" id="customApiField"></code>
+              <button class="er-btn er-btn-ghost er-btn-sm" type="button" id="copyCmd" data-i18n="copy">Copiar</button>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <!-- fila e template -->
-      <div class="form-group">
-        <label data-i18n="lbl_queue">Fila</label>
-        <select id="queueSelect">
-          <option value="lol_solo" data-i18n="q_solo">Ranked Solo/Duo</option>
-          <option value="lol_flex" data-i18n="q_flex">Ranked Flex</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="lbl_template">Template da Resposta</label>
-        <textarea id="commandTemplate" placeholder="(player) está (rank) com (pontos) pontos"></textarea>
-
-        <div class="vars-section-title" data-i18n="vars_general">Geral</div>
-        <div class="vars-help">
-          <span class="var-chip" onclick="insertVar('(player)')">(player)</span>
-          <span class="var-chip" onclick="insertVar('(tag)')">(tag)</span>
-          <span class="var-chip" onclick="insertVar('(region)')">(region)</span>
-        </div>
-
-        <div class="vars-section-title" data-i18n="vars_ranked">Ranked</div>
-        <div class="vars-help">
-          <span class="var-chip" onclick="insertVar('(rank)')">(rank)</span>
-          <span class="var-chip" onclick="insertVar('(tier)')">(tier)</span>
-          <span class="var-chip" onclick="insertVar('(divisao)')">(divisao)</span>
-          <span class="var-chip" onclick="insertVar('(pontos)')">(pontos)</span>
-          <span class="var-chip" onclick="insertVar('(lp)')">(lp)</span>
-        </div>
-
-        <div class="vars-section-title" data-i18n="vars_stats">Estatísticas</div>
-        <div class="vars-help">
-          <span class="var-chip" onclick="insertVar('(vitorias)')">(vitorias)</span>
-          <span class="var-chip" onclick="insertVar('(derrotas)')">(derrotas)</span>
-          <span class="var-chip" onclick="insertVar('(winrate)')">(winrate)</span>
-          <span class="var-chip" onclick="insertVar('(jogos)')">(jogos)</span>
-        </div>
-        <div class="hint" data-i18n="hint_syntax">Você pode usar parênteses <code>(player)</code> ou chaves <code>{player}</code> — os dois funcionam.</div>
-      </div>
-
-      <button class="btn" id="genBtn" onclick="generateCommand()">
-        <span data-i18n="btn_test">Gerar Comando</span>
-      </button>
-
-      <!-- resultado -->
-      <div id="testResult" class="twitch-preview" style="display:none">
-        <div class="preview-label" data-i18n="preview_label">Como aparecerá na Twitch</div>
-        <div class="twitch-line">
-          <span class="twitch-user" data-i18n="t_user">Usuário</span>
-          <span class="twitch-arrow">→</span>
-          <span class="twitch-msg" id="twitchUserCmd"></span>
-        </div>
-        <div class="twitch-line">
-          <span class="twitch-user">StreamElements</span>
-          <span class="twitch-arrow">→</span>
-          <span class="twitch-msg bot" id="twitchBotMsg"></span>
-        </div>
-
-        <hr class="twitch-divider">
-
-        <div class="preview-label" data-i18n="cmd_se">Resposta do comando (cole no StreamElements)</div>
-        <div class="copy-field">
-          <input type="text" id="customApiField" readonly onclick="this.select()">
-          <button class="copy-btn" onclick="copyCustomApi()">COPY</button>
-        </div>
-
-        <div class="hint" style="margin-top:10px">
-          <span data-i18n="hint_view">💡 Você também pode visualizar a resposta pronta diretamente no navegador:</span>
-          <div class="copy-field" style="margin-top:6px">
-            <input type="text" id="webViewLink" readonly onclick="this.select()">
-            <button class="copy-btn" onclick="copyWebView()">COPY</button>
+          <div class="er-field">
+            <span class="er-label" data-i18n="hint_view">Ver a resposta no navegador</span>
+            <div class="er-copy">
+              <code class="er-code" id="webViewLink"></code>
+              <button class="er-btn er-btn-ghost er-btn-sm" type="button" id="copyLink" data-i18n="copy">Copiar</button>
+            </div>
           </div>
         </div>
-      </div>
-
+      </section>
     </div>
-  </div>
+  </main>
 
-  <!-- DISCLAIMER -->
-  <div class="disclaimer">
-    asrus.app isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
-  </div>
+  <footer class="er-footer er-section">
+    <div class="er-container">
+      <p class="legal" data-i18n="footer_text">EloRank Games não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de quem está envolvido oficialmente com seus produtos. Riot Games, League of Legends e todas as marcas associadas são marcas registradas da Riot Games, Inc.</p>
+      <div class="er-meta">
+        <span>elorank-games.com.br/rank-lol</span>
+        <span>League of Legends</span>
+        <span>feito por asrus</span>
+      </div>
+    </div>
+  </footer>
 
-</div>
+  <script>
+    // ============================================
+    // CONFIG
+    // ============================================
+    // Comando que vai para o bot: subdomínio das APIs de jogos (URL curta e fixa).
+    const CMD_BASE = 'https://api.elorank-games.com.br/lol/cmd';
+    // A prévia roda pela origem da própria página (mesmo servidor, sem CORS).
+    const PREVIEW_BASE = `${location.origin}/api/lol/cmd`;
 
-<script>
-// ============================================
-// CONFIG
-// ============================================
-const API_URL = (() => {
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return 'http://localhost:3000';
-  return '';
-})();
+    const REGIOES = [
+      ['br1', 'BR1 — Brasil'], ['na1', 'NA1 — North America'], ['euw1', 'EUW1 — Europe West'],
+      ['eun1', 'EUN1 — Europe Nordic & East'], ['kr', 'KR — Korea'], ['jp1', 'JP1 — Japan'],
+      ['la1', 'LA1 — Latin America North'], ['la2', 'LA2 — Latin America South'], ['oc1', 'OC1 — Oceania'],
+      ['tr1', 'TR1 — Turkey'], ['ru', 'RU — Russia']
+    ];
 
-let foundPuuid = null;       // PUUID encontrado no PASSO 1 (apenas exibição)
-let currentGenMethod = 'riotid'; // método ativo no PASSO 2
-let currentLang = 'pt';
+    const DEFAULT_TEMPLATE = {
+      pt: '(player) está (rank) com (pontos) pontos',
+      en: '(player) is (rank) with (lp) LP'
+    };
 
-// Template padrão por idioma — usado quando o usuário não preenche
-const DEFAULT_TEMPLATE = {
-  pt: '(player) está (rank) com (pontos) pontos',
-  en: '(player) is (rank) with (lp) LP'
-};
+    // ============================================
+    // TEXTOS (PT / EN)
+    // ============================================
+    const I18N = {
+      pt: {
+        hero_desc: 'Busque o jogador, monte a mensagem e copie o comando pronto para o chat da sua live.',
+        search_title: 'Buscar jogador', step01: 'Passo 1',
+        hint_step1: 'Descubra o ID EloRank do jogador. O mesmo ID vale para LoL, TFT e Valorant.',
+        lbl_nick: 'Nick', lbl_tag: 'Tag', lbl_region: 'Região', lbl_region_lol: 'Região do LoL', lbl_id: 'ID EloRank',
+        btn_search: 'Buscar jogador', player_found: 'ID EloRank (vale para LoL, TFT e Valorant)',
+        copy: 'Copiar', player: 'Jogador', region: 'Região',
+        cmd_title: 'Gerar comando', step02: 'Passo 2', who_label: 'Jogador do comando',
+        m_nicktag: 'Nick + Tag', m_id: 'ID EloRank',
+        lbl_queue: 'Fila', q_solo: 'Ranqueada Solo/Duo', q_flex: 'Ranqueada Flex',
+        lbl_vars: 'Variáveis (clique para inserir)', vars_general: 'Geral', vars_ranked: 'Ranqueada', vars_stats: 'Estatísticas',
+        lbl_template: 'Mensagem',
+        hint_syntax: 'Pode usar parênteses <code>(player)</code> ou chaves <code>{player}</code> — os dois funcionam.',
+        btn_test: 'Gerar comando', preview_label: 'Prévia no chat', t_user: 'Espectador',
+        cmd_se: 'Comando para o StreamElements', hint_view: 'Ver a resposta no navegador',
+        footer_text: 'EloRank Games não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de quem está envolvido oficialmente com seus produtos. Riot Games, League of Legends e todas as marcas associadas são marcas registradas da Riot Games, Inc.',
+        toast_fill_nicktag: 'Preencha nick e tag', toast_fill_puuid: 'Cole o ID EloRank',
+        toast_searching: 'Buscando...', toast_generating: 'Gerando...',
+        toast_found: 'Jogador encontrado!', toast_copied: 'Copiado!', toast_err_conn: 'Erro de conexão: ',
+        toast_copy_fail: 'Não deu para copiar. Selecione o texto e copie manualmente.'
+      },
+      en: {
+        hero_desc: 'Search the player, build the message and copy the ready-to-use command for your stream chat.',
+        search_title: 'Search player', step01: 'Step 1',
+        hint_step1: 'Find the player\'s EloRank ID. The same ID works for LoL, TFT and Valorant.',
+        lbl_nick: 'Name', lbl_tag: 'Tag', lbl_region: 'Region', lbl_region_lol: 'LoL region', lbl_id: 'EloRank ID',
+        btn_search: 'Search player', player_found: 'EloRank ID (works for LoL, TFT & Valorant)',
+        copy: 'Copy', player: 'Player', region: 'Region',
+        cmd_title: 'Generate command', step02: 'Step 2', who_label: 'Command player',
+        m_nicktag: 'Name + Tag', m_id: 'EloRank ID',
+        lbl_queue: 'Queue', q_solo: 'Ranked Solo/Duo', q_flex: 'Ranked Flex',
+        lbl_vars: 'Variables (click to insert)', vars_general: 'General', vars_ranked: 'Ranked', vars_stats: 'Stats',
+        lbl_template: 'Message',
+        hint_syntax: 'You can use parentheses <code>(player)</code> or braces <code>{player}</code> — both work.',
+        btn_test: 'Generate command', preview_label: 'Chat preview', t_user: 'Viewer',
+        cmd_se: 'Command for StreamElements', hint_view: 'View the response in the browser',
+        footer_text: 'EloRank Games isn\'t endorsed by Riot Games and doesn\'t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, League of Legends and all associated properties are trademarks or registered trademarks of Riot Games, Inc.',
+        toast_fill_nicktag: 'Fill in name and tag', toast_fill_puuid: 'Paste the EloRank ID',
+        toast_searching: 'Searching...', toast_generating: 'Generating...',
+        toast_found: 'Player found!', toast_copied: 'Copied!', toast_err_conn: 'Connection error: ',
+        toast_copy_fail: 'Could not copy. Select the text and copy it manually.'
+      }
+    };
 
-// ============================================
-// I18N
-// ============================================
-const I18N = {
-  pt: {
-    brand: 'Rank LoL',
-    brand_sub: 'League of Legends · Custom Commands',
-    home: 'Inicio',
-    hero_title: 'Rank LoL',
-    hero_desc: 'Comandos customizados para exibir o seu rank de League of Legends em tempo real na Twitch',
-    search_title: 'Buscar Jogador',
-    step01: 'PASSO 01',
-    hint_step1: 'Use para descobrir o PUUID de um jogador. O PUUID é necessário para gerar comandos no Passo 02.',
-    lbl_nick: 'Nick',
-    lbl_tag: 'Tag',
-    lbl_region: 'Região',
-    btn_search: 'Buscar Jogador',
-    player_found: 'Jogador encontrado',
-    cmd_title: 'Gerar Comando',
-    step02: 'PASSO 02',
-    who_label: 'Jogador para o comando',
-    m_nicktag: 'Nick + Tag',
-    hint_puuid_use: 'Use o PUUID obtido no Passo 01 ou um que você já tenha.',
-    lbl_queue: 'Fila',
-    q_solo: 'Ranked Solo/Duo',
-    q_flex: 'Ranked Flex',
-    lbl_template: 'Template da Resposta',
-    vars_general: 'Geral',
-    vars_ranked: 'Ranked',
-    vars_stats: 'Estatísticas',
-    hint_syntax: 'Você pode usar parênteses <code>(player)</code> ou chaves <code>{player}</code> — os dois funcionam.',
-    btn_test: 'Gerar Comando',
-    preview_label: 'Como aparecerá na Twitch',
-    t_user: 'Usuário',
-    cmd_se: 'Resposta do comando (cole no StreamElements)',
-    hint_view: '💡 Você também pode visualizar a resposta pronta diretamente no navegador:',
-    toast_fill_nicktag: 'Preencha nick e tag',
-    toast_fill_puuid: 'Cole um PUUID',
-    toast_searching: 'Buscando...',
-    toast_generating: 'Gerando...',
-    toast_found: '✅ Jogador encontrado',
-    toast_copied: '🔗 Copiado!',
-    toast_err_conn: 'Erro de conexão: '
-  },
-  en: {
-    brand: 'Rank LoL',
-    brand_sub: 'League of Legends · Custom Commands',
-    home: 'Home',
-    hero_title: 'Rank LoL',
-    hero_desc: 'Custom commands to display your League of Legends rank in real time on Twitch chat',
-    search_title: 'Search Player',
-    step01: 'STEP 01',
-    hint_step1: 'Use this to look up a player\'s PUUID. The PUUID is required to generate commands in Step 02.',
-    lbl_nick: 'Name',
-    lbl_tag: 'Tag',
-    lbl_region: 'Region',
-    btn_search: 'Search Player',
-    player_found: 'Player found',
-    cmd_title: 'Generate Command',
-    step02: 'STEP 02',
-    who_label: 'Player for the command',
-    m_nicktag: 'Name + Tag',
-    hint_puuid_use: 'Use the PUUID from Step 01 or one you already have.',
-    lbl_queue: 'Queue',
-    q_solo: 'Ranked Solo/Duo',
-    q_flex: 'Ranked Flex',
-    lbl_template: 'Response Template',
-    vars_general: 'General',
-    vars_ranked: 'Ranked',
-    vars_stats: 'Stats',
-    hint_syntax: 'You can use parentheses <code>(player)</code> or braces <code>{player}</code> — both work.',
-    btn_test: 'Generate Command',
-    preview_label: 'How it will look on Twitch',
-    t_user: 'User',
-    cmd_se: 'Command response (paste into StreamElements)',
-    hint_view: '💡 You can also view the rendered response directly in the browser:',
-    toast_fill_nicktag: 'Fill in name and tag',
-    toast_fill_puuid: 'Paste a PUUID',
-    toast_searching: 'Searching...',
-    toast_generating: 'Generating...',
-    toast_found: '✅ Player found',
-    toast_copied: '🔗 Copied!',
-    toast_err_conn: 'Connection error: '
-  }
-};
+    const $ = (id) => document.getElementById(id);
+    function lerIdioma() {
+      try { return localStorage.getItem('ranklol_lang') === 'en' ? 'en' : 'pt'; } catch (e) { return 'pt'; }
+    }
+    let currentLang = lerIdioma();
+    let foundPuuid = null;          // ID do passo 1 (só para copiar)
+    let currentGenMethod = 'riotid';
+    const t = (key) => I18N[currentLang][key] || key;
 
-function t(key) {
-  return I18N[currentLang][key] || key;
-}
+    function setLang(lang) {
+      currentLang = lang;
+      try { localStorage.setItem('ranklol_lang', lang); } catch (e) { /* só nesta visita */ }
+      document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
+      document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+      document.querySelectorAll('[data-i18n]').forEach((el) => { const v = I18N[lang][el.dataset.i18n]; if (v) el.textContent = v; });
+      // Textos fixos com <code> (vêm deste arquivo, não do usuário).
+      document.querySelectorAll('[data-i18n-html]').forEach((el) => { const v = I18N[lang][el.dataset.i18nHtml]; if (v) el.innerHTML = v; });
+      $('commandTemplate').placeholder = DEFAULT_TEMPLATE[lang];
+    }
 
-function setLang(lang) {
-  currentLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-  document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
+    function showAlert(msg, tipo) {
+      document.querySelectorAll('.er-toast').forEach((el) => el.remove());
+      const el = document.createElement('div');
+      el.className = `er-toast er-toast-${tipo || 'ok'}`;
+      el.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2800);
+    }
 
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (I18N[lang][key]) el.innerHTML = I18N[lang][key];
-  });
+    async function copiar(texto) {
+      if (!texto) return;
+      try { await navigator.clipboard.writeText(texto); showAlert(t('toast_copied'), 'ok'); }
+      catch (e) { showAlert(t('toast_copy_fail'), 'erro'); }
+    }
 
-  // placeholder do textarea com o exemplo no idioma atual
-  const ta = document.getElementById('commandTemplate');
-  if (ta) ta.placeholder = DEFAULT_TEMPLATE[lang] || DEFAULT_TEMPLATE.pt;
-}
+    function ocupado(btn, rotulo) {
+      const antes = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = rotulo;
+      return () => { btn.disabled = false; btn.textContent = antes; };
+    }
 
-// ============================================
-// ALERT (toast)
-// ============================================
-function showAlert(msg, type = 'info') {
-  const old = document.querySelector('.alert');
-  if (old) old.remove();
-  const el = document.createElement('div');
-  el.className = `alert ${type}`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => {
-    el.style.opacity = '0';
-    setTimeout(() => el.remove(), 300);
-  }, 2800);
-}
+    // ============================================
+    // PASSO 1: buscar jogador (registra e mostra o ID)
+    // ============================================
+    async function searchPlayer() {
+      const gameName = $('searchGameName').value.trim();
+      const tagLine = $('searchTagLine').value.trim().replace('#', '');
+      const region = $('searchRegion').value;
+      if (!gameName || !tagLine) { showAlert(t('toast_fill_nicktag'), 'erro'); return; }
 
-// ============================================
-// PASSO 1: buscar jogador (só para descobrir o PUUID)
-// O resultado NÃO é usado automaticamente no Passo 2.
-// O salvamento no banco acontece silenciosamente (necessário para o /cmd/lol/PUUID funcionar depois).
-// ============================================
-async function searchPlayer() {
-  const gameName = document.getElementById('searchGameName').value.trim();
-  const tagLine = document.getElementById('searchTagLine').value.trim().replace('#', '');
-  const region = document.getElementById('searchRegion').value;
+      const liberar = ocupado($('searchBtn'), t('toast_searching'));
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameName, tagLine, region })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { showAlert(data.error || 'Erro', 'erro'); return; }
+        foundPuuid = data.account_id || data.puuid;
+        $('pfName').textContent = `${data.gameName}#${data.tagLine}`;
+        $('pfRegion').textContent = (data.region || '').toUpperCase();
+        $('pfPuuid').textContent = foundPuuid;
+        $('playerFound').hidden = false;
+        showAlert(t('toast_found'), 'ok');
+      } catch (err) {
+        showAlert(t('toast_err_conn') + err.message, 'erro');
+      } finally {
+        liberar();
+      }
+    }
 
-  if (!gameName || !tagLine) {
-    showAlert(t('toast_fill_nicktag'), 'error');
-    return;
-  }
+    // ============================================
+    // PASSO 2: gerar comando
+    // ============================================
+    function selectGenMethod(method) {
+      currentGenMethod = method;
+      document.querySelectorAll('[data-method]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.method === method)));
+      $('gen-panel-riotid').hidden = method !== 'riotid';
+      $('gen-panel-puuid').hidden = method !== 'puuid';
+    }
 
-  const btn = document.getElementById('searchBtn');
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> ' + t('toast_searching');
+    function insertVar(variable) {
+      const ta = $('commandTemplate');
+      const s = ta.selectionStart;
+      const e = ta.selectionEnd;
+      ta.value = ta.value.substring(0, s) + variable + ta.value.substring(e);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = s + variable.length;
+    }
 
-  try {
-    const res = await fetch(`${API_URL}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameName, tagLine, region })
+    // { puuid, region } OU { nick, tag, region } — o servidor aceita os dois.
+    function resolveGenIdentity() {
+      if (currentGenMethod === 'puuid') {
+        const puuid = $('genPuuid').value.trim();
+        if (!puuid) return { error: 'toast_fill_puuid' };
+        return { puuid, region: $('genPuuidRegion').value };
+      }
+      const nick = $('genGameName').value.trim();
+      const tag = $('genTagLine').value.trim().replace('#', '');
+      if (!nick || !tag) return { error: 'toast_fill_nicktag' };
+      return { nick, tag, region: $('genRegion').value };
+    }
+
+    // Só escapa o que quebra a URL; o resto fica legível no comando.
+    const safeEncode = (s) => String(s).replace(/[&#?%]/g, encodeURIComponent);
+
+    function buildCleanUrl(identity, msg, queue, lang, base = CMD_BASE) {
+      let path = base;
+      let idPart = '';
+      if (identity.puuid) {
+        // A região do LoL vai junto: pode ser diferente da do Valorant.
+        path = `${base}/${safeEncode(identity.puuid)}`;
+        if (identity.region) idPart = `region=${safeEncode(identity.region)}&`;
+      } else {
+        idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
+      }
+      return `${path}?${idPart}msg="${safeEncode(msg)}"&queue=${safeEncode(queue)}&lang=${safeEncode(lang)}`;
+    }
+
+    async function generateCommand() {
+      const identity = resolveGenIdentity();
+      if (identity.error) { showAlert(t(identity.error), 'erro'); return; }
+      const template = $('commandTemplate').value.trim() || DEFAULT_TEMPLATE[currentLang];
+      const queue = $('queueSelect').value;
+
+      const liberar = ocupado($('genBtn'), t('toast_generating'));
+      try {
+        const apiLink = buildCleanUrl(identity, template, queue, currentLang);
+        const res = await fetch(buildCleanUrl(identity, template, queue, currentLang, PREVIEW_BASE) + '&format=text');
+        $('twitchBotMsg').textContent = await res.text();
+        $('customApiField').textContent = `$(customapi ${apiLink})`;
+        $('webViewLink').textContent = apiLink;
+        $('testResult').hidden = false;
+      } catch (err) {
+        showAlert(t('toast_err_conn') + err.message, 'erro');
+      } finally {
+        liberar();
+      }
+    }
+
+    // ============================================
+    // INÍCIO
+    // ============================================
+    document.querySelectorAll('[data-regioes]').forEach((sel) => {
+      REGIOES.forEach(([v, rotulo]) => sel.add(new Option(rotulo, v)));
     });
-    const data = await res.json();
-    if (!res.ok) {
-      showAlert(data.error || 'Error', 'error');
-      return;
-    }
-    // Usa o account_id (ID gerado do zero) — o MESMO ID vale para LoL, TFT e
-    // Valorant. data.isNew indica se foi criado agora.
-    onPlayerFound(data.account_id || data.puuid, data.gameName, data.tagLine, data.region);
-    showAlert(t('toast_found'), 'success');
-  } catch (err) {
-    showAlert(t('toast_err_conn') + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = orig;
-  }
-}
-
-function onPlayerFound(puuid, name, tag, region) {
-  foundPuuid = puuid; // guarda só para o botão COPY
-  document.getElementById('pfName').textContent = `${name}#${tag}`;
-  document.getElementById('pfRegion').textContent = '🌎 ' + (region || '').toUpperCase();
-  document.getElementById('pfPuuid').textContent = puuid;
-  document.getElementById('playerFound').classList.add('show');
-}
-
-function copyPuuid() {
-  if (!foundPuuid) return;
-  navigator.clipboard.writeText(foundPuuid);
-  showAlert(t('toast_copied'), 'success');
-}
-
-// ============================================
-// PASSO 2: gerar comando (independente do Passo 1)
-// ============================================
-function selectGenMethod(method) {
-  currentGenMethod = method;
-  document.querySelectorAll('#gen-panel-riotid, #gen-panel-puuid').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.subsection .method-tab').forEach(t => t.classList.toggle('active', t.dataset.method === method));
-  document.getElementById('gen-panel-' + method).classList.add('active');
-}
-
-function insertVar(variable) {
-  const ta = document.getElementById('commandTemplate');
-  const s = ta.selectionStart;
-  const e = ta.selectionEnd;
-  const txt = ta.value;
-  ta.value = txt.substring(0, s) + variable + txt.substring(e);
-  ta.focus();
-  ta.selectionStart = ta.selectionEnd = s + variable.length;
-}
-
-// Resolve a identidade do jogador a partir do método ativo no Passo 2
-// Retorna { puuid } OU { nick, tag, region } — o backend lida com os dois formatos.
-// Quando é nick+tag, NÃO chamamos a Riot aqui: a URL vai sair com nick+tag e o backend resolve.
-function resolveGenIdentity() {
-  if (currentGenMethod === 'puuid') {
-    const puuid = document.getElementById('genPuuid').value.trim();
-    if (!puuid) return { error: 'toast_fill_puuid' };
-    const region = document.getElementById('genPuuidRegion').value;
-    return { puuid, region };
-  }
-
-  const nick = document.getElementById('genGameName').value.trim();
-  const tag = document.getElementById('genTagLine').value.trim().replace('#', '');
-  const region = document.getElementById('genRegion').value;
-  if (!nick || !tag) return { error: 'toast_fill_nicktag' };
-  return { nick, tag, region };
-}
-
-// Codifica preservando legibilidade — só escapa o que de fato quebra URL
-function safeEncode(s) {
-  return String(s).replace(/[&#?%]/g, encodeURIComponent);
-}
-
-// Endereço do comando que vai para o bot: o subdomínio das APIs de jogos
-// (api.asrus.app/lol/... = www.asrus.app/api/lol/...). URL curta e fixa — não
-// depende de onde a página foi aberta.
-const CMD_BASE = 'https://api.asrus.app/lol/cmd';
-// O preview roda pela origem da própria página: o mesmo backend, sem depender
-// de CORS entre www e api.
-const PREVIEW_BASE = `${window.location.origin}/api/lol/cmd`;
-
-// Monta URL "clean" no padrão unificado /{jogo}/cmd...:
-// - PUUID: {base}/{puuid}?msg=...
-// - Nick + tag: {base}?nick=...&tag=...&region=...&msg=...
-function buildCleanUrl(identity, msg, queue, lang, base = CMD_BASE) {
-  const safeMsg = safeEncode(msg);
-  const safeQueue = safeEncode(queue);
-  const safeLang = safeEncode(lang);
-
-  let path = base;
-  let idPart = '';
-  if (identity.puuid) {
-    // ID no path (mesmo formato de TFT e Valorant). A região do LoL vai junto
-    // porque pode diferir da do Valorant (conta cross-region).
-    path = `${base}/${safeEncode(identity.puuid)}`;
-    if (identity.region) idPart = `region=${safeEncode(identity.region)}&`;
-  } else {
-    idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
-  }
-
-  return `${path}?${idPart}msg="${safeMsg}"&queue=${safeQueue}&lang=${safeLang}`;
-}
-
-async function generateCommand() {
-  const btn = document.getElementById('genBtn');
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> ' + t('toast_generating');
-
-  try {
-    const identity = resolveGenIdentity();
-    if (identity.error) {
-      showAlert(t(identity.error), 'error');
-      return;
-    }
-
-    // template padrão se vazio (por idioma)
-    let template = document.getElementById('commandTemplate').value.trim();
-    if (!template) template = DEFAULT_TEMPLATE[currentLang] || DEFAULT_TEMPLATE.pt;
-    const queue = document.getElementById('queueSelect').value;
-
-    // Monta a URL no formato que o usuário escolheu (puuid OU nick+tag)
-    const apiLink = buildCleanUrl(identity, template, queue, currentLang);
-
-    // Preview com os mesmos parâmetros, pela origem da página
-    const previewUrl = buildCleanUrl(identity, template, queue, currentLang, PREVIEW_BASE) + '&format=text';
-    const res = await fetch(previewUrl);
-    const text = await res.text();
-
-    showResult(apiLink, text);
-  } catch (err) {
-    showAlert(t('toast_err_conn') + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = orig;
-  }
-}
-
-function showResult(apiLink, resultText) {
-  document.getElementById('twitchUserCmd').textContent = '!elo';
-  document.getElementById('twitchBotMsg').textContent = resultText;
-
-  document.getElementById('customApiField').value = `$(customapi ${apiLink})`;
-  document.getElementById('webViewLink').value = apiLink;
-  document.getElementById('testResult').style.display = 'block';
-}
-
-function copyCustomApi() {
-  navigator.clipboard.writeText(document.getElementById('customApiField').value);
-  showAlert(t('toast_copied'), 'success');
-}
-function copyWebView() {
-  navigator.clipboard.writeText(document.getElementById('webViewLink').value);
-  showAlert(t('toast_copied'), 'success');
-}
-
-// Enter dispara busca/gerar
-document.getElementById('searchTagLine').addEventListener('keypress', e => { if (e.key === 'Enter') searchPlayer(); });
-document.getElementById('genTagLine').addEventListener('keypress', e => { if (e.key === 'Enter') generateCommand(); });
-document.getElementById('genPuuid').addEventListener('keypress', e => { if (e.key === 'Enter') generateCommand(); });
-
-// idioma inicial
-setLang('pt');
-</script>
+    document.querySelectorAll('[data-vars]').forEach((grupo) => {
+      grupo.dataset.vars.split(' ').forEach((v) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'er-chip';
+        chip.setAttribute('aria-label', `Inserir (${v})`);
+        chip.innerHTML = `<span class="er-chip-par">(</span>${v}<span class="er-chip-par">)</span>`;
+        chip.addEventListener('click', () => insertVar(`(${v})`));
+        grupo.appendChild(chip);
+      });
+    });
+    document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+    document.querySelectorAll('[data-method]').forEach((b) => b.addEventListener('click', () => selectGenMethod(b.dataset.method)));
+    $('formBusca').addEventListener('submit', (e) => { e.preventDefault(); searchPlayer(); });
+    $('genBtn').addEventListener('click', generateCommand);
+    ['genTagLine', 'genPuuid'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') generateCommand(); }));
+    $('copyId').addEventListener('click', () => copiar(foundPuuid));
+    $('copyCmd').addEventListener('click', () => copiar($('customApiField').textContent));
+    $('copyLink').addEventListener('click', () => copiar($('webViewLink').textContent));
+    setLang(currentLang);
+  </script>
 </body>
 </html>

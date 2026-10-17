@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Precisa ser igual ao nome do Worker no painel da Cloudflare e ao
+  // "service" do binding RANK_LOL no gateway (repositório elorank-games).
+  "name": "rank-lol",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+
+  // Página e arquivos estáticos. O que não for arquivo (API) cai no Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  },
+
+  // Endereço de teste: rank-lol.<sua-conta>.workers.dev. O público acessa por
+  // elorank-games.com.br/rank-lol (o gateway repassa para cá).
+  "workers_dev": true,
+
+  "observability": { "enabled": true }
+}
