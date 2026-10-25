@@ -44,6 +44,9 @@ export function criarRiot(apiKey, fetchImpl = fetch) {
   return {
     contaPorRiotId: (cluster, gameName, tagLine) =>
       get(cluster, `/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`),
+    contaPorPuuid: (cluster, puuid) => get(cluster, `/riot/account/v1/accounts/by-puuid/${encodeURIComponent(puuid)}`),
+    // LOL-STATUS-V4: incidentes e manutenções da plataforma (usado no /status).
+    statusPlataforma: (region) => get(region, "/lol/status/v4/platform-data"),
     invocadorPorPuuid: (region, puuid) => get(region, `/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`),
     ligaLol: (region, puuid) => get(region, `/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`),
   };

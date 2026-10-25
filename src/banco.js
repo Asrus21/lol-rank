@@ -69,6 +69,9 @@ export function criarBanco(q) {
       return schemaPronto;
     },
 
+    // Checagem do /api/lol/status.
+    ping: () => q("SELECT 1"),
+
     // ---------- lol_players ----------
     jogadorPorPuuid: (puuid) => q("SELECT * FROM lol_players WHERE riot_puuid = $1 LIMIT 1", [puuid]).then(primeira),
     jogadorPorUuid: (uuid) => q("SELECT * FROM lol_players WHERE custom_uuid = $1", [uuid]).then(primeira),

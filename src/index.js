@@ -30,6 +30,32 @@ function app(env) {
 // Tudo que não é página é API: /api/* e /cmd/* (inclui o antigo /cmd/UUID/NOME).
 const API = /^\/(api|cmd)(\/|$)/;
 
+// Endpoints de um comando só que vão para o cache de borda (30s, ver
+// CACHE_OK em endpoints.js). O mesmo !elo repetido no chat nem chega à Riot.
+const CACHEAVEL = /^\/api\/lol\/(elo|puuid)(\/|$)/;
+
+// Chave sempre no host público: não importa se veio direto, pelo gateway ou
+// pelo api.elorank-games.com.br.
+const chaveCache = (url) => new Request(`https://elorank-games.com.br/__cache/rank-lol${url.pathname}${url.search}`);
+
+async function comCache(request, ctx, responder) {
+  const url = new URL(request.url);
+  const cache = request.method === "GET" && CACHEAVEL.test(url.pathname) && typeof caches !== "undefined" ? caches.default : null;
+  if (!cache) return responder();
+
+  const guardada = await cache.match(chaveCache(url)).catch(() => null);
+  if (guardada) {
+    const r = new Response(guardada.body, guardada);
+    r.headers.set("X-Edge-Cache", "HIT");
+    return r;
+  }
+  const resposta = await responder();
+  if (resposta.status === 200 && /max-age=\d+/.test(resposta.headers.get("Cache-Control") || "") && !/no-store/.test(resposta.headers.get("Cache-Control"))) {
+    ctx.waitUntil(cache.put(chaveCache(url), resposta.clone()).catch((e) => console.warn("[borda]", e?.message || e)));
+  }
+  return resposta;
+}
+
 export default {
   fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
@@ -37,6 +63,6 @@ export default {
     // chegar aqui. Mas a chamada pode vir do gateway (Service Binding): aí
     // entregamos a página explicitamente, para não depender desse detalhe.
     if (!API.test(pathname) && env.ASSETS) return env.ASSETS.fetch(request);
-    return app(env).fetch(request, env, ctx);
+    return comCache(request, ctx, () => app(env).fetch(request, env, ctx));
   },
 };
