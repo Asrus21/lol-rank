@@ -13,6 +13,8 @@ const LIGA = [
 function falsos({ status, statusPlataforma } = {}) {
   const chamadas = [];
   const contas = new Map([["acc-1", { account_id: "acc-1", game_name: "asrus", tag_line: "BR1", riot_puuid: "P1", riot_region: "br1" }]]);
+  // PUUID gravado pelo outro jogo (outra chave da Riot): a Riot recusa.
+  contas.set("outro-1", { account_id: "outro-1", game_name: "asrus", tag_line: "BR1", riot_puuid: "PUUID-DE-OUTRA-CHAVE", riot_region: "br1" });
   contas.set("val-1", { account_id: "val-1", game_name: "asrus", tag_line: "BR1", val_puuid: "V1", val_region: "br" });
   const banco = {
     async garantirSchema() {
@@ -147,4 +149,11 @@ test("/status: JSON com banco e Riot; texto para o chat; 503 quando algo cai", a
 test("/elo/id aceita PUUID da Riot que não está na accounts (como o /cmd antigo)", async () => {
   const { app } = falsos();
   assert.equal(await txt(app, "/api/lol/elo/id/P1?msg=(player) (rank)"), "asrus Diamante 2");
+});
+
+test("/elo/id: PUUID salvo por outro jogo (outra chave da Riot) cai no Riot ID", async () => {
+  const { app, chamadas } = falsos();
+  assert.equal(await txt(app, "/api/lol/elo/id/outro-1?msg=(player) (rank)"), "asrus Diamante 2");
+  assert.ok(chamadas.includes("conta:americas"));
+  assert.ok(!chamadas.includes("vincular"));
 });

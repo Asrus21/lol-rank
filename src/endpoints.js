@@ -186,7 +186,19 @@ export function registrarEndpoints(app, { banco, riot }) {
         jogador = { puuid: conta.puuid, gameName: conta.gameName, tagLine: conta.tagLine, region };
         await banco.vincularContaRiot({ riotPuuid: conta.puuid, gameName: conta.gameName, tagLine: conta.tagLine, riotRegion: region });
       }
-      return responderElo(c, o, jogador, await riot.ligaLol(region, jogador.puuid));
+      let entradas;
+      try {
+        entradas = await riot.ligaLol(region, jogador.puuid);
+      } catch (err) {
+        // O PUUID salvo pode ter vindo de outro jogo: cada chave da Riot cifra o
+        // PUUID de um jeito, e a Riot recusa (400) o de outra chave. Nesse caso
+        // resolve pelo Riot ID salvo, sem regravar (o outro jogo usa o dele).
+        if (![400, 404].includes(err?.status) || !acc.game_name || !acc.tag_line) throw err;
+        const conta = await riot.contaPorRiotId(REGION_ROUTING[region], acc.game_name, acc.tag_line);
+        jogador = { puuid: conta.puuid, gameName: conta.gameName, tagLine: conta.tagLine, region };
+        entradas = await riot.ligaLol(region, conta.puuid);
+      }
+      return responderElo(c, o, jogador, entradas);
     } catch (err) {
       return erroRiot(c, o, err);
     }

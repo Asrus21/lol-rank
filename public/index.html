@@ -415,7 +415,8 @@
         if (identity.region) idPart = `region=${safeEncode(identity.region)}&`;
       } else {
         path = `${base}/nick`;
-        idPart = `player=${safeEncode(identity.nick + '#' + identity.tag)}&region=${safeEncode(identity.region)}&`;
+        // Espaço no nick vira %20: cru, o bot quebraria a URL no espaço.
+        idPart = `player=${safeEncode(identity.nick + '#' + identity.tag).replace(/ /g, '%20')}&region=${safeEncode(identity.region)}&`;
       }
       return `${path}?${idPart}msg="${safeEncode(msg)}"&queue=${safeEncode(queue)}&lang=${safeEncode(lang)}`;
     }
