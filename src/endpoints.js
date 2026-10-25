@@ -157,9 +157,23 @@ export function registrarEndpoints(app, { banco, riot }) {
   // ---------- Elo pelo ID EloRank: 1 consulta (accounts) + Riot. ----------
   app.get("/api/lol/elo/id/:id", async (c) => {
     const o = opcoes(c);
-    const acc = await banco.contaCompartilhada(cleanMsg(c.req.param("id")));
+    const id = cleanMsg(c.req.param("id"));
+    const acc = await banco.contaCompartilhada(id);
     if (!acc) {
-      return falha(c, o, 404, `ID não encontrado. Busque o jogador em ${SITE}`, `ID not found. Search the player at ${SITE}`);
+      // Compatível com o /cmd/{id} antigo: um PUUID da Riot que ainda não está
+      // na tabela accounts também funciona.
+      const region = (o.region || REGIAO_PADRAO).toLowerCase();
+      if (!REGION_ROUTING[region]) return falha(c, o, 400, "Região inválida (ex.: region=br1)", "Invalid region (e.g. region=br1)");
+      try {
+        const [conta, entradas] = await Promise.all([
+          riot.contaPorPuuid(REGION_ROUTING[region], id),
+          riot.ligaLol(region, id),
+        ]);
+        return responderElo(c, o, { puuid: id, gameName: conta.gameName, tagLine: conta.tagLine, region }, entradas);
+      } catch (err) {
+        if (err?.status === 429) return erroRiot(c, o, err);
+        return falha(c, o, 404, `ID não encontrado. Busque o jogador em ${SITE}`, `ID not found. Search the player at ${SITE}`);
+      }
     }
     const region = (o.region || acc.riot_region || "").toLowerCase() || REGIAO_PADRAO;
     if (!REGION_ROUTING[region]) return falha(c, o, 400, "Região inválida (ex.: region=br1)", "Invalid region (e.g. region=br1)");

@@ -230,9 +230,9 @@
     // CONFIG
     // ============================================
     // Comando que vai para o bot: subdomínio das APIs de jogos (URL curta e fixa).
-    const CMD_BASE = 'https://api.elorank-games.com.br/lol/cmd';
+    const CMD_BASE = 'https://api.elorank-games.com.br/lol/elo';
     // A prévia roda pela origem da própria página (mesmo servidor, sem CORS).
-    const PREVIEW_BASE = `${location.origin}/api/lol/cmd`;
+    const PREVIEW_BASE = `${location.origin}/api/lol/elo`;
 
     const REGIOES = [
       ['br1', 'BR1 — Brasil'], ['na1', 'NA1 — North America'], ['euw1', 'EUW1 — Europe West'],
@@ -406,12 +406,16 @@
     function buildCleanUrl(identity, msg, queue, lang, base = CMD_BASE) {
       let path = base;
       let idPart = '';
+      // Endpoints de um comando só (elorank-games.com.br/docs):
+      //   ID   -> /lol/elo/id/{id}
+      //   Nick -> /lol/elo/nick?player=Nome%23Tag
       if (identity.puuid) {
         // A região do LoL vai junto: pode ser diferente da do Valorant.
-        path = `${base}/${safeEncode(identity.puuid)}`;
+        path = `${base}/id/${safeEncode(identity.puuid)}`;
         if (identity.region) idPart = `region=${safeEncode(identity.region)}&`;
       } else {
-        idPart = `nick=${safeEncode(identity.nick)}&tag=${safeEncode(identity.tag)}&region=${safeEncode(identity.region)}&`;
+        path = `${base}/nick`;
+        idPart = `player=${safeEncode(identity.nick + '#' + identity.tag)}&region=${safeEncode(identity.region)}&`;
       }
       return `${path}?${idPart}msg="${safeEncode(msg)}"&queue=${safeEncode(queue)}&lang=${safeEncode(lang)}`;
     }
