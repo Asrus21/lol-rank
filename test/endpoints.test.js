@@ -143,3 +143,8 @@ test("/status: JSON com banco e Riot; texto para o chat; 503 quando algo cai", a
   assert.equal((await r2.json()).riot.erro, "HTTP 503");
   assert.equal(await txt(caido, "/api/lol/status?format=text"), "LoL API: instável · Riot BR1: fora do ar · banco OK");
 });
+
+test("/elo/id aceita PUUID da Riot que não está na accounts (como o /cmd antigo)", async () => {
+  const { app } = falsos();
+  assert.equal(await txt(app, "/api/lol/elo/id/P1?msg=(player) (rank)"), "asrus Diamante 2");
+});
