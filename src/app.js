@@ -11,8 +11,12 @@
 //   GET    /cmd/:uuid/:nome                 roda comando salvo (texto)
 //   GET    /api/commands/:uuid              lista comandos salvos
 //   DELETE /api/command/:uuid/:nome         apaga comando salvo
+//
+// Endpoints de um comando só (/api/lol/elo/*, /api/lol/puuid, /api/lol/status):
+// src/endpoints.js.
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { registrarEndpoints } from "./endpoints.js";
 import { renderHtmlResult } from "./html.js";
 import { REGION_ROUTING, buscarContaRiot, mapValToRiot } from "./riot.js";
 import { TEMPLATE_PADRAO, applyTemplate, cleanMsg, entradaDaFila } from "./template.js";
@@ -26,10 +30,15 @@ export function criarApp({ banco, riot }) {
     "*",
     cors({ origin: "*", allowMethods: ["GET", "POST", "DELETE", "OPTIONS"], allowHeaders: ["Content-Type"] })
   );
+  // Os endpoints de um comando só não criam tabelas: vão direto à Riot (e, no
+  // /elo/id, a uma leitura da accounts).
+  const SEM_SCHEMA = /^\/api\/lol\/(elo|puuid|status)(\/|$)/;
   app.use("*", async (c, next) => {
-    await banco.garantirSchema();
+    if (!SEM_SCHEMA.test(c.req.path)) await banco.garantirSchema();
     return next();
   });
+
+  registrarEndpoints(app, { banco, riot });
 
   // Entrada da fila pedida; qualquer erro da Riot vira "sem rank".
   async function rankDoJogador(puuid, region, gameMode) {
