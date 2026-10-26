@@ -14,7 +14,7 @@
 // Texto sai sempre com status 200: o bot imprime o corpo no chat, inclusive a
 // mensagem de erro.
 import { REGION_ROUTING, buscarContaRiot } from "./riot.js";
-import { TEMPLATE_PADRAO, applyTemplate, cleanMsg, entradaDaFila, traduzirDivisao, traduzirTier } from "./template.js";
+import { TEMPLATE_PADRAO, TEMPLATE_PADRAO_EN, applyTemplate, cleanMsg, entradaDaFila, traduzirDivisao, traduzirTier } from "./template.js";
 
 export const SITE = "elorank-games.com.br/rank-lol";
 export const REGIAO_PADRAO = "br1";
@@ -39,7 +39,7 @@ function opcoes(c) {
     lang,
     en: lang === "en",
     fila: FILAS_VALIDAS.includes(fila) ? fila : "lol_solo",
-    template: cleanMsg(c.req.query("msg")) || TEMPLATE_PADRAO,
+    template: cleanMsg(c.req.query("msg")) || (lang === "en" ? TEMPLATE_PADRAO_EN : TEMPLATE_PADRAO),
     json: (c.req.query("format") || "").toLowerCase() === "json",
     region: (cleanMsg(c.req.query("region")) || "").toLowerCase(),
   };

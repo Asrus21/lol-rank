@@ -157,3 +157,8 @@ test("/elo/id: PUUID salvo por outro jogo (outra chave da Riot) cai no Riot ID",
   assert.ok(chamadas.includes("conta:americas"));
   assert.ok(!chamadas.includes("vincular"));
 });
+
+test("/elo em inglês: frase padrão toda em inglês", async () => {
+  const { app } = falsos();
+  assert.equal(await txt(app, "/api/lol/elo/nick/asrus/BR1?lang=en"), "asrus is Diamond 2 with 64 LP");
+});
