@@ -18,6 +18,7 @@ const TIERS_SEM_DIVISAO = ["MASTER", "GRANDMASTER", "CHALLENGER"];
 const FILAS = { lol: "RANKED_SOLO_5x5", lol_solo: "RANKED_SOLO_5x5", lol_flex: "RANKED_FLEX_SR" };
 
 export const TEMPLATE_PADRAO = "(player) está (rank) com (pontos) pontos";
+export const TEMPLATE_PADRAO_EN = "(player) is (rank) with (pontos) LP";
 
 export function traduzirTier(tier, lang = "pt") {
   if (!tier) return lang === "en" ? "Unranked" : "Sem rank";

@@ -17,7 +17,7 @@ export function renderHtmlResult(result, meta) {
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#040506">
 <link rel="icon" href="https://elorank-games.com.br/favicon.svg" type="image/svg+xml">
-<script src="${DS}/elorank.js?v=3"></script>
+<script src="${DS}/elorank.js?v=4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
